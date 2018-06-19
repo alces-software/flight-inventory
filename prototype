@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+
+require 'json'
+
+
+class DataWrapper
+  attr_reader :data
+
+  def initialize(data)
+    @data = JSON.parse(data)
+  end
+
+  def method_missing(symbol, *_args)
+    data[symbol.to_s]
+  end
+end
+
+module Logical
+  class Node < DataWrapper
+  end
+
+  # Distinct from `gender` (possibly need separate class for that?).
+  class Group < DataWrapper; end
+end
+
+module Physical
+  class Rack < DataWrapper; end
+  class Chassis < DataWrapper; end
+
+  class Server < DataWrapper; end
+
+  class DiskArray < DataWrapper; end
+  class Network < DataWrapper; end
+  class NetworkAdapter < DataWrapper; end
+  class NetworkSwitch < DataWrapper; end
+  class Pdu < DataWrapper; end
+  class Psu < DataWrapper; end
+end
+
+
+def main
+  node = Logical::Node.new(metal 'view node.node780')
+  puts "Node: #{node.name}"
+end
+
+def metal(args)
+  # Equivalent to `metal` function; see `$metalware/etc/profile.d/base.sh`.
+  command =
+    "cd /opt/metalware && PATH='/opt/metalware/opt/ruby/bin:#{ENV.fetch('PATH')}' bin/metal #{args}"
+  `#{command}`
+end
+
+
+main
