@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+require 'active_support/all'
+require 'fileutils'
+require 'net/ssh'
+
+
+CONTROLLER_IP = '10.101.0.46'
+CONTROLLER_PASSWORD = ENV.fetch('ALCES_INSECURE_PASSWORD')
+
+CACHE_DIR = 'metal_view_cache'
+
+METAL_VIEW_COMMANDS = [
+  'node.node780',
+]
+
+def main
+  FileUtils.mkdir_p(CACHE_DIR)
+
+  Net::SSH.start(CONTROLLER_IP, 'root', password: CONTROLLER_PASSWORD) do |ssh|
+    METAL_VIEW_COMMANDS.map do |view_args|
+      data = ssh.exec!(metal_command('view', view_args))
+
+      cache_file = File.join(CACHE_DIR, view_args)
+      File.write(cache_file, data)
+    end
+  end
+end
+
+def metal_command(*args)
+  # Equivalent to `metal` function (with stderr redirected); see
+  # `$metalware/etc/profile.d/base.sh`.
+  <<~SH.squish
+    cd /opt/metalware
+      && PATH=\"/opt/metalware/opt/ruby/bin:$PATH\"
+      bin/metal #{args.join(' ')}
+      2> /dev/null
+  SH
+end
+
+
+main

@@ -1,0 +1,506 @@
+{
+  "name": "node780",
+  "group": "#<Metalware::Namespaces::Group:0x00000001b48628, name: nodes7>",
+  "genders": [
+    "nodes7",
+    "physical",
+    "compute",
+    "phase2",
+    "nodes",
+    "all"
+  ],
+  "index": 1,
+  "kickstart_url": "http://10.10.1.1/metalware/kickstart/node780",
+  "build_complete_url": "http://10.10.1.1/metalware/exec/kscomplete.php?name=node780",
+  "build_complete_path": "/var/lib/metalware/events/node780/complete",
+  "hexadecimal_ip": "0A0A0101\n",
+  "build_method": "#<Metalware::BuildMethods::Kickstarts::Pxelinux:0x00000001cd82e0>",
+  "config": {
+    "cluster": "<%= answer.cluster_name %>",
+    "encrypted_root_password": "<%= answer.root_password %>",
+    "profile": "MASTER",
+    "ssh_key": "<%= answer.root_ssh_key %>",
+    "domain": "<%= answer.domain %>",
+    "search_domains": "<% config.networks.each do |network, details| -%><% next if network.to_s == 'ext' %><%= details.domain %><%= if network.to_s == 'bmc' then '.mgt' else '' end %>.<%= config.domain %> <% end -%><%= config.domain %>",
+    "dns_type": "<%= answer.dns_type %>",
+    "externaldns": "<%= answer.externaldns %>",
+    "internaldns": "<%= answer.internaldns %>",
+    "kernelappendoptions": "console=tty0 console=ttyS1,115200n8",
+    "jobid": "",
+    "networks": {
+      "pri": {
+        "defined": "<%= answer.pri_network_defined %>",
+        "interface": "<%= answer.pri_network_interface %>",
+        "hostname": "<%= config.networks.pri.short_hostname %>.<%= config.domain %>",
+        "domain": "<%= answer.pri_network_domain %>",
+        "short_hostname": "<%= node.name %>.<%= config.networks.pri.domain %>",
+        "ip": "<%= answer.pri_network_ip_node || answer.pri_network_ip %>",
+        "netmask": "<%= answer.pri_network_netmask %>",
+        "network": "<%= answer.pri_network_network %>",
+        "gateway": "<%= answer.pri_network_gateway %>",
+        "primary": true,
+        "named_fwd_zone": "<%= config.networks.pri.domain %>.<%= config.domain %>",
+        "named_rev_zone": "<% split_net = config.networks.pri.network.split(/\\./) -%><%= split_net[1] %>.<%= split_net[0] %>",
+        "firewallpolicy": "trusted"
+      },
+      "mgt": {
+        "defined": "<%= answer.mgt_network_defined %>",
+        "interface": "<%= answer.mgt_network_interface %>",
+        "hostname": "<%= config.networks.mgt.short_hostname %>.<%= config.domain %>",
+        "domain": "<%= answer.mgt_network_domain %>",
+        "short_hostname": "<%= node.name %>.<%= config.networks.mgt.domain %>",
+        "ip": "<%= answer.mgt_network_ip_node || answer.mgt_network_ip %>",
+        "netmask": "<%= answer.mgt_network_netmask %>",
+        "network": "<%= answer.mgt_network_network %>",
+        "gateway": null,
+        "named_fwd_zone": "<%= config.networks.mgt.domain %>.<%= config.domain %>",
+        "named_rev_zone": "<% split_net = config.networks.mgt.network.split(/\\./) -%><%= split_net[1] %>.<%= split_net[0] %>",
+        "firewallpolicy": "trusted"
+      },
+      "ib": {
+        "defined": "<%= answer.ib_network_defined %>",
+        "interface": "<%= answer.ib_network_interface %>",
+        "hostname": "<%= config.networks.ib.short_hostname %>.<%= config.domain %>",
+        "domain": "<%= answer.ib_network_domain %>",
+        "short_hostname": "<%= node.name %>.<%= config.networks.ib.domain %>",
+        "ip": "<%= answer.ib_network_ip_node || answer.ib_network_ip %>",
+        "netmask": "<%= answer.ib_network_netmask %>",
+        "network": "<%= answer.ib_network_network %>",
+        "gateway": null,
+        "named_fwd_zone": "<%= config.networks.ib.domain %>.<%= config.domain %>",
+        "named_rev_zone": "<% split_net = config.networks.ib.network.split(/\\./) -%><%= split_net[1] %>.<%= split_net[0] %>",
+        "firewallpolicy": "trusted"
+      },
+      "bmc": {
+        "defined": "<%= answer.bmc_network_defined %>",
+        "interface": "bmc",
+        "hostname": "<%= config.networks.bmc.short_hostname %>.<%= config.networks.mgt.domain %>.<%= config.domain %>",
+        "domain": "bmc",
+        "short_hostname": "<%= node.name %>.<%= config.networks.bmc.domain %>",
+        "ip": "<%= (node.asset.oob.ip rescue nil) || answer.bmc_network_ip_node || answer.bmc_network_ip %>",
+        "netmask": "<%= node.asset.oob.netmask || answer.mgt_network_netmask %>",
+        "network": "<%= node.asset.oob.network || answer.mgt_network_network %>",
+        "gateway": "0.0.0.0",
+        "bmcpassword": "<%= node.asset.oob.password || answer.bmc_password %>",
+        "bmcchannel": 1,
+        "bmcuser": "<%= node.asset.oob.user || 'admin' %>",
+        "bmcuserid": 2,
+        "bmcvlan": "<%= node.asset.oob.vlan || answer.bmc_network_vlan %>"
+      }
+    },
+    "disklabel": "sda",
+    "disksetup": "clearpart --all --initlabel\nzerombr\nbootloader --location=mbr --driveorder=<%= config.disklabel %> --append=\"$bootloaderappend\"\n\n#Disk partitioning information\npart /boot --fstype ext4 --size=4096 --asprimary --ondisk <%= config.disklabel %>\npart pv.01 --size=1 --grow --asprimary --ondisk <%= config.disklabel %>\nvolgroup system pv.01\nlogvol  /  --fstype ext4 --vgname=system  --size=16384 --name=root\nlogvol  /var --fstype ext4 --vgname=system --size=16384 --name=var\nlogvol  /tmp --fstype ext4 --vgname=system --size=1 --grow --name=tmp\nlogvol  swap  --fstype swap --vgname=system  --size=8096  --name=swap1\n",
+    "templates": {
+      "kickstart": "<%= answer.kickstart_template %>",
+      "pxelinux": "<%= answer.pxelinux_template %>"
+    },
+    "files": {
+      "platform": [
+        "/opt/alces/install/scripts/aws.sh"
+      ],
+      "main": [
+        "main.sh"
+      ],
+      "setup": [
+        "local-script.sh"
+      ],
+      "core": [
+        "core/base.sh",
+        "core/chrony.sh",
+        "core/configs/chrony.conf",
+        "core/firstrun_scripts/chronyfix.bash",
+        "core/syslog.sh",
+        "core/configs/metalware.conf",
+        "core/configs/rsyslog-remote",
+        "core/firstrun_scripts/firewall_rsyslog.bash",
+        "core/postfix.sh",
+        "core/network-base.sh",
+        "core/network-ipmi.sh",
+        "core/network-join.sh",
+        "core/networking.sh",
+        "core/configs/authorized_keys",
+        "core/firstrun_scripts/firewall_main.bash"
+      ],
+      "scripts": [
+        "local-script.sh"
+      ]
+    },
+    "ntp": {
+      "is_server": false,
+      "server": "controller.<%= config.networks.pri.domain %>.<%= config.domain %>"
+    },
+    "rsyslog": {
+      "is_server": false,
+      "server": "controller"
+    },
+    "firewall": {
+      "enabled": true,
+      "internal": {
+        "services": "ssh http dhcp dns https mountd nfs ntp rpc-bind smtp syslog tftp tftp-client"
+      },
+      "external": {
+        "services": "ssh"
+      },
+      "management": {
+        "services": "ssh snmp"
+      }
+    },
+    "postfix": {
+      "relayhost": "<%= answer.postfix_relay %>"
+    },
+    "is_vm": "<%= answer.is_vm %>",
+    "libvirt_host": "<%= answer.libvirt_host %>",
+    "vm_disk_pool": "<%= answer.vm_disk_pool %>",
+    "vm_mac_address_build": "<%= answer.vm_mac_address_build %>"
+  },
+  "answer": {
+    "pri_network_defined": true,
+    "pri_network_ip_node": null,
+    "pri_network_interface": "eth0",
+    "pri_network_short_hostname": "controller.<%= config.networks.pri.domain %>",
+    "mgt_network_defined": false,
+    "mgt_network_ip_node": null,
+    "mgt_network_interface": "eth1",
+    "mgt_network_short_hostname": "controller.<%= config.networks.mgt.domain %>",
+    "bmc_network_defined": true,
+    "bmc_network_ip_node": null,
+    "bmc_password": "Pa55Word",
+    "ib_network_defined": true,
+    "ib_network_ip_node": null,
+    "ib_network_interface": "ib0",
+    "ib_network_short_hostname": "controller.<%= config.networks.ib.domain %>",
+    "ext_network_defined": null,
+    "ext_network_domain": "ext",
+    "ext_network_ip_node": null,
+    "ext_network_network": "10.101.0.0",
+    "ext_network_netmask": "255.255.0.0",
+    "ext_network_interface": "eth2",
+    "ext_network_gateway": null,
+    "ext_network_short_hostname": "controller.<%= config.networks.ext.domain %>",
+    "metalware_internal--plugin_enabled--lustre": false,
+    "lustre_isserver": false,
+    "lustre_isclient": null,
+    "lustre_networks": "o2ib(<%= config.networks.ib.interface %>),tcp0(<%= config.networks.pri.interface %>)",
+    "metalware_internal--plugin_enabled--ganglia": true,
+    "ganglia_isserver": false,
+    "ganglia_serverip": "10.10.1.1",
+    "metalware_internal--plugin_enabled--nvidia": false,
+    "metalware_internal--plugin_enabled--firstrun": true,
+    "metalware_internal--plugin_enabled--infiniband": false,
+    "ib_use_installer": null,
+    "ib_mellanoxinstaller": null,
+    "metalware_internal--plugin_enabled--ipa": false,
+    "metalware_internal--plugin_enabled--yumrepo": true,
+    "yumrepo_isserver": false,
+    "yumrepo_sourcerepos": "base.upstream",
+    "yumrepo_buildurl": "http://repo.alces-software.com/repo/centos/7/base/",
+    "yumrepo_useclientrepofile": true,
+    "yumrepo_clientrepofile": "http://10.10.1.1/repo/client.repo",
+    "metalware_internal--plugin_enabled--rootrun": false,
+    "rootrun_scriptdir": null,
+    "rootrun_userlogdir": null,
+    "rootrun_adminlogdir": null,
+    "metalware_internal--plugin_enabled--flightcenter": true,
+    "flightcenter_archivedir": "",
+    "flightcenter_sharedscratchdir": "",
+    "flightcenter_localscratchdir": "",
+    "metalware_internal--plugin_enabled--flightdirect": false,
+    "flightdirect_isserver": false,
+    "flightdirect_isclient": null,
+    "flightdirect_sourceurl": "https://s3-eu-west-1.amazonaws.com/alces-flight/FlightDirect/1.0.4/flight-install",
+    "metalware_internal--plugin_enabled--slurm": false,
+    "slurm_isserver": false,
+    "slurm_servername": null,
+    "metalware_internal--plugin_enabled--nfs": false,
+    "nfs_isserver": false,
+    "nfs_isclient": null,
+    "root_password": "$1$KwZ1TARD$ce95cSZSLCRxpaEDqF2A61",
+    "kickstart_template": "default",
+    "pxelinux_template": "default",
+    "bmc_network_vlan": "",
+    "is_vm": false,
+    "libvirt_host": null,
+    "vm_memory": 4,
+    "vm_cpus": 1,
+    "vm_root_disk_size": 8,
+    "vm_disk_pool": "vm",
+    "vm_disk_pool_path": "/opt/vm",
+    "vm_mac_address_build": "00:<%= (1..5).map{\"%0.2X\"%rand(256)}.join(\":\") %>",
+    "genders_host_range": "node7[80-84]",
+    "genders_host_role": "compute",
+    "genders_all_group": true,
+    "genders_additional_groups": "phase2,nodes",
+    "pri_network_ip": "10.10.<%= node.group.index %>.<%= node.index %>",
+    "pri_network_gateway": "10.10.1.1",
+    "mgt_network_ip": "10.11.<%= node.group.index.to_i + 100 %>.<%= node.index %>",
+    "bmc_network_ip": "10.11.<%= node.group.index %>.<%= node.index %>",
+    "ib_network_ip": "10.12.<%= node.group.index %>.<%= node.index %>",
+    "cluster_name": "asset-example",
+    "domain": "<%= domain.config.cluster %>.cluster.local",
+    "externaldns": "10.101.0.1",
+    "internaldns": "10.10.1.1",
+    "root_ssh_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJaUusGoHbJGyOTtO3GWTwXFjAyskSwJinrrodmayGYgJ/Z9DjFUasMENV/PX/KYFPVv5FJVwtf9Koglyuq59IYCIf/f57eHJGolesGZNmCmRI5OKZQfsdwNqsAyocs4CZWktwfB4HtwZ+Ou3UmxMuGltKFEv21QiRwi4O1ocViZuLa5vNBj01j6iCm85IIoTtehqF2HF7caaBUgDwU1mzeyEmCRn9f9UsOinquQRxZ/DTZSYHFFryfFP5xQZ4MX4GpoSarQ7BbTuAkcmIUaZHlkRTOpnhXcRsVQXQI3OzfuGGUKm/9nTl963txI9cxBZoMz175O/GWRIUHwUgE6Ll root@localhost.localdomain",
+    "dns_type": "named",
+    "postfix_relay": "controller.<%= config.networks.pri.domain %>.<%= config.domain %>",
+    "pri_network_domain": "pri",
+    "pri_network_netmask": "255.255.0.0",
+    "pri_network_network": "10.10.0.0",
+    "mgt_network_domain": "mgt",
+    "mgt_network_network": "10.11.0.0",
+    "mgt_network_netmask": "255.255.0.0",
+    "ib_network_domain": "ib",
+    "ib_network_netmask": "255.255.0.0",
+    "ib_network_network": "10.12.0.0",
+    "ipa_serverip": null,
+    "ipa_servername": null,
+    "ipa_insecurepassword": null,
+    "ipa_userdir": null,
+    "slurm_mungekey": null,
+    "slurm_nodelist": "<% nodes.each do |node| %><%= node.name %>,<% end %>"
+  },
+  "files": {
+    "platform": [
+      {
+        "raw": "/opt/alces/install/scripts/aws.sh",
+        "name": "aws.sh",
+        "error": "              Template path '/opt/alces/install/scripts/aws.sh' for '/opt/alces/install/scripts/aws.sh' does not exist\n"
+      }
+    ],
+    "main": [
+      {
+        "raw": "main.sh",
+        "name": "main.sh",
+        "template_path": "/var/lib/metalware/repo/files/main.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/main/main.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/main/main.sh"
+      }
+    ],
+    "setup": [
+      {
+        "raw": "local-script.sh",
+        "name": "local-script.sh",
+        "template_path": "/var/lib/metalware/repo/files/local-script.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/setup/local-script.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/setup/local-script.sh"
+      }
+    ],
+    "core": [
+      {
+        "raw": "core/base.sh",
+        "name": "base.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/base.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/base.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/base.sh"
+      },
+      {
+        "raw": "core/chrony.sh",
+        "name": "chrony.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/chrony.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/chrony.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/chrony.sh"
+      },
+      {
+        "raw": "core/configs/chrony.conf",
+        "name": "chrony.conf",
+        "template_path": "/var/lib/metalware/repo/files/core/configs/chrony.conf",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/chrony.conf",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/chrony.conf"
+      },
+      {
+        "raw": "core/firstrun_scripts/chronyfix.bash",
+        "name": "chronyfix.bash",
+        "template_path": "/var/lib/metalware/repo/files/core/firstrun_scripts/chronyfix.bash",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/chronyfix.bash",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/chronyfix.bash"
+      },
+      {
+        "raw": "core/syslog.sh",
+        "name": "syslog.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/syslog.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/syslog.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/syslog.sh"
+      },
+      {
+        "raw": "core/configs/metalware.conf",
+        "name": "metalware.conf",
+        "template_path": "/var/lib/metalware/repo/files/core/configs/metalware.conf",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/metalware.conf",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/metalware.conf"
+      },
+      {
+        "raw": "core/configs/rsyslog-remote",
+        "name": "rsyslog-remote",
+        "template_path": "/var/lib/metalware/repo/files/core/configs/rsyslog-remote",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/rsyslog-remote",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/rsyslog-remote"
+      },
+      {
+        "raw": "core/firstrun_scripts/firewall_rsyslog.bash",
+        "name": "firewall_rsyslog.bash",
+        "template_path": "/var/lib/metalware/repo/files/core/firstrun_scripts/firewall_rsyslog.bash",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/firewall_rsyslog.bash",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/firewall_rsyslog.bash"
+      },
+      {
+        "raw": "core/postfix.sh",
+        "name": "postfix.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/postfix.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/postfix.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/postfix.sh"
+      },
+      {
+        "raw": "core/network-base.sh",
+        "name": "network-base.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/network-base.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/network-base.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/network-base.sh"
+      },
+      {
+        "raw": "core/network-ipmi.sh",
+        "name": "network-ipmi.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/network-ipmi.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/network-ipmi.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/network-ipmi.sh"
+      },
+      {
+        "raw": "core/network-join.sh",
+        "name": "network-join.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/network-join.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/network-join.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/network-join.sh"
+      },
+      {
+        "raw": "core/networking.sh",
+        "name": "networking.sh",
+        "template_path": "/var/lib/metalware/repo/files/core/networking.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/networking.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/networking.sh"
+      },
+      {
+        "raw": "core/configs/authorized_keys",
+        "name": "authorized_keys",
+        "template_path": "/var/lib/metalware/repo/files/core/configs/authorized_keys",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/authorized_keys",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/authorized_keys"
+      },
+      {
+        "raw": "core/firstrun_scripts/firewall_main.bash",
+        "name": "firewall_main.bash",
+        "template_path": "/var/lib/metalware/repo/files/core/firstrun_scripts/firewall_main.bash",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/core/firewall_main.bash",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/core/firewall_main.bash"
+      }
+    ],
+    "scripts": [
+      {
+        "raw": "local-script.sh",
+        "name": "local-script.sh",
+        "template_path": "/var/lib/metalware/repo/files/local-script.sh",
+        "rendered_path": "/var/lib/metalware/rendered/node780/files/repo/scripts/local-script.sh",
+        "url": "http://10.10.1.1/metalware/node780/files/repo/scripts/local-script.sh"
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "name": "ganglia",
+      "config": {
+        "priority": 3,
+        "files": {
+          "scripts": [
+            "/var/lib/metalware/plugins/ganglia/files/ganglia.sh"
+          ]
+        },
+        "ganglia_isserver": "<%= node.answer.ganglia_isserver %>",
+        "ganglia_serverip": "<%= node.answer.ganglia_serverip %>"
+      },
+      "files": {
+        "scripts": [
+          {
+            "raw": "/var/lib/metalware/plugins/ganglia/files/ganglia.sh",
+            "name": "ganglia.sh",
+            "template_path": "/var/lib/metalware/plugins/ganglia/files/ganglia.sh",
+            "rendered_path": "/var/lib/metalware/rendered/node780/files/plugin/ganglia/scripts/ganglia.sh",
+            "url": "http://10.10.1.1/metalware/node780/files/plugin/ganglia/scripts/ganglia.sh"
+          }
+        ]
+      }
+    },
+    {
+      "name": "firstrun",
+      "config": {
+        "priority": 0,
+        "files": {
+          "setup": [
+            "/var/lib/metalware/plugins/firstrun/files/firstrun.sh"
+          ]
+        }
+      },
+      "files": {
+        "setup": [
+          {
+            "raw": "/var/lib/metalware/plugins/firstrun/files/firstrun.sh",
+            "name": "firstrun.sh",
+            "template_path": "/var/lib/metalware/plugins/firstrun/files/firstrun.sh",
+            "rendered_path": "/var/lib/metalware/rendered/node780/files/plugin/firstrun/setup/firstrun.sh",
+            "url": "http://10.10.1.1/metalware/node780/files/plugin/firstrun/setup/firstrun.sh"
+          }
+        ]
+      }
+    },
+    {
+      "name": "yumrepo",
+      "config": {
+        "priority": 0,
+        "files": {
+          "setup": [
+            "/var/lib/metalware/plugins/yumrepo/files/repos.sh"
+          ]
+        },
+        "yumrepo_buildurl": "<%= node.answer.yumrepo_buildurl %>",
+        "yumrepo_isserver": "<%= node.answer.yumrepo_isserver %>",
+        "yumrepo_sourcerepos": "<%= node.answer.yumrepo_sourcerepos %>",
+        "yumrepo_useclientrepofile": "<%= node.answer.yumrepo_useclientrepofile %>",
+        "yumrepo_clientrepofile": "<%= node.answer.yumrepo_clientrepofile %>"
+      },
+      "files": {
+        "setup": [
+          {
+            "raw": "/var/lib/metalware/plugins/yumrepo/files/repos.sh",
+            "name": "repos.sh",
+            "template_path": "/var/lib/metalware/plugins/yumrepo/files/repos.sh",
+            "rendered_path": "/var/lib/metalware/rendered/node780/files/plugin/yumrepo/setup/repos.sh",
+            "url": "http://10.10.1.1/metalware/node780/files/plugin/yumrepo/setup/repos.sh"
+          }
+        ]
+      }
+    },
+    {
+      "name": "flightcenter",
+      "config": {
+        "priority": 20,
+        "files": {
+          "scripts": [
+            "/var/lib/metalware/plugins/flightcenter/files/flightcenter.sh"
+          ]
+        },
+        "flightcenter_archivedir": "<%= node.answer.flightcenter_archivedir %>",
+        "flightcenter_sharedscratchdir": "<%= node.answer.flightcenter_sharedscratchdir %>",
+        "flightcenter_localscratchdir": "<%= node.answer.flightcenter_localscratchdir %>",
+        "flightcenter_mailserver": "10.78.0.15",
+        "flightcenter_ntpserver": "10.78.0.15"
+      },
+      "files": {
+        "scripts": [
+          {
+            "raw": "/var/lib/metalware/plugins/flightcenter/files/flightcenter.sh",
+            "name": "flightcenter.sh",
+            "template_path": "/var/lib/metalware/plugins/flightcenter/files/flightcenter.sh",
+            "rendered_path": "/var/lib/metalware/rendered/node780/files/plugin/flightcenter/scripts/flightcenter.sh",
+            "url": "http://10.10.1.1/metalware/node780/files/plugin/flightcenter/scripts/flightcenter.sh"
+          }
+        ]
+      }
+    }
+  ]
+}

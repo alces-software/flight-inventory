@@ -3,6 +3,9 @@
 require 'json'
 
 
+CACHE_DIR = 'metal_view_cache'
+
+
 class DataWrapper
   attr_reader :data
 
@@ -39,15 +42,13 @@ end
 
 
 def main
-  node = Logical::Node.new(metal 'view node.node780')
+  node = Logical::Node.new(metal_view 'node.node780')
   puts "Node: #{node.name}"
 end
 
-def metal(args)
-  # Equivalent to `metal` function; see `$metalware/etc/profile.d/base.sh`.
-  command =
-    "cd /opt/metalware && PATH='/opt/metalware/opt/ruby/bin:#{ENV.fetch('PATH')}' bin/metal #{args}"
-  `#{command}`
+def metal_view(args)
+  cache_file = File.join(CACHE_DIR, args)
+  File.read(cache_file)
 end
 
 
