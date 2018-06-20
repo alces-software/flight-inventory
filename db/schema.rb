@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_20_150611) do
+ActiveRecord::Schema.define(version: 2018_06_20_151041) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -20,6 +20,16 @@ ActiveRecord::Schema.define(version: 2018_06_20_150611) do
     t.json "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "server_id"
+    t.index ["server_id"], name: "index_nodes_on_server_id"
   end
 
+  create_table "servers", force: :cascade do |t|
+    t.string "name", null: false
+    t.json "data", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_foreign_key "nodes", "servers"
 end
