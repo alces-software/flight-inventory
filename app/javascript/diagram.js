@@ -5,6 +5,33 @@ const initialize = () => {
 };
 
 const drawDiagram = element => {
+  const {servers, nodes} = JSON.parse(element.getAttribute('data-assets'));
+
+  const graphNodes = [
+    // XXX If a server doesnt have an associated node it currently appears
+    // smaller/like a node, should probably make graph nodes always appear same
+    // size regardless of (lack of) contents.
+    // XXX Have this data come from JSON encoding in Rails rather than being
+    // hard-coded here?
+    ...servers.map(s => {
+      return {
+        data: {
+          id: `server-${s.id}`,
+          name: s.name,
+        },
+      };
+    }),
+    ...nodes.map(n => {
+      return {
+        data: {
+          id: `node-${n.id}`,
+          parent: `server-${n.server_id}`,
+          name: n.name,
+        },
+      };
+    }),
+  ];
+
   cytoscape({
     container: element,
 
@@ -15,7 +42,8 @@ const drawDiagram = element => {
       {
         selector: 'node',
         css: {
-          content: 'data(id)',
+          // So name (rather than id) displayed for nodes.
+          content: 'data(name)',
           'text-valign': 'center',
           'text-halign': 'center',
         },
@@ -50,22 +78,12 @@ const drawDiagram = element => {
     ],
 
     elements: {
-      nodes: [
-        {data: {id: 'a', parent: 'b'}, position: {x: 215, y: 85}},
-        {data: {id: 'b'}},
-        {data: {id: 'c', parent: 'b'}, position: {x: 300, y: 85}},
-        {data: {id: 'd'}, position: {x: 215, y: 175}},
-        {data: {id: 'e'}},
-        {data: {id: 'f', parent: 'e'}, position: {x: 300, y: 175}},
-      ],
-      edges: [
-        {data: {id: 'ad', source: 'a', target: 'd'}},
-        {data: {id: 'eb', source: 'e', target: 'b'}},
-      ],
+      nodes: graphNodes,
+      edges: [],
     },
 
     layout: {
-      name: 'preset',
+      name: 'grid',
       padding: 5,
     },
   });
