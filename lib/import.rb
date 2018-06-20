@@ -13,6 +13,7 @@ class Import
     # XXX Reset everything on each run for now.
     `rails db:reset`
 
+    import_servers
     import_nodes
   end
 
@@ -22,6 +23,18 @@ class Import
 
   def initialize(ssh_connection)
     @ssh_connection = ssh_connection
+  end
+
+  def import_servers
+    all_server_data = metal_view('assets.servers')
+
+    STDERR.puts "Found #{all_server_data.length} servers"
+
+    all_server_data.each do |data|
+      name = asset_name(data)
+      STDERR.puts "Importing server #{name}"
+      Server.create!(name: name, data: data)
+    end
   end
 
   def import_nodes
@@ -39,16 +52,29 @@ class Import
         next
       end
 
-      STDERR.puts "Importing #{node}..."
+      STDERR.puts "Importing node #{node}..."
+
       # XXX Use below with old Metalware, as above.
       # node_data = JSON.parse(ssh.exec!("metal view node.#{node} 2> /dev/null"))
       node_data = metal_view("nodes.#{node}.to_h")
-      Node.create!(name: node, data: node_data)
+
+      node_asset_data = metal_view("nodes.#{node}.asset")
+      node_server = asset_name(node_asset_data)
+
+      Node.create!(
+        name: node,
+        data: node_data,
+        server: Server.find_by_name!(node_server)
+      )
     end
   end
 
   def metal_view(view_args)
     output = ssh_connection.exec!("metal view '#{view_args}' 2> /dev/null")
     JSON.parse(output)
+  end
+
+  def asset_name(asset_data)
+    asset_data.dig('metadata', 'name')
   end
 end
