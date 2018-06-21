@@ -15,13 +15,15 @@ class Import
 
     import_chassis
     import_servers
+    import_network_adapters
     import_nodes
   end
 
   private
 
   attr_reader :ssh_connection,
-    :server_chassis_relationships
+    :server_chassis_relationships,
+    :network_adapter_server_relationships
 
   def initialize(ssh_connection)
     @ssh_connection = ssh_connection
@@ -59,7 +61,7 @@ class Import
 
     STDERR.puts "Found #{all_server_data.length} servers"
 
-    all_server_data.each do |data|
+    servers = all_server_data.map do |data|
       name = asset_name(data)
       STDERR.puts "Importing server #{name}"
 
@@ -68,6 +70,38 @@ class Import
       Server.create!(name: name, data: data, chassis: chassis)
     rescue KeyError => ex
       STDERR.puts "WARNING: Server #{name} has no chassis, skipping: #{ex.message}"
+    end.compact
+
+    # Create Network adapter name -> Server name hash
+    @network_adapter_server_relationships = servers.flat_map do |server|
+      network_adapter_names = server.data['network_adapters'].flat_map do |reference|
+        # Reference is an @WilliamMcCumstie-style Metalware asset reference,
+        # e.g. `^rack1-r630-chassis-780-server1`; we just want the name of the
+        # referenced asset.
+        reference.gsub(/^\^/, '')
+      end
+
+      network_adapter_names.zip([server.name] * network_adapter_names.length)
+    end.to_h
+
+    STDERR.puts "Found these network adapter-server relationships:"
+    STDERR.puts JSON.pretty_generate(network_adapter_server_relationships).gsub(/^/, '    ')
+  end
+
+  def import_network_adapters
+    all_network_adapter_data = metal_view('assets.network_adapters')
+
+    STDERR.puts "Found #{all_network_adapter_data.length} network adapters"
+
+    all_network_adapter_data.map do |data|
+      name = asset_name(data)
+      STDERR.puts "Importing network adapter #{name}"
+
+      server_name = network_adapter_server_relationships.fetch(name)
+      server = Server.find_by_name!(server_name)
+      NetworkAdapter.create!(name: name, data: data, server: server)
+    rescue KeyError => ex
+      STDERR.puts "WARNING: Network adapter #{name} has no server, skipping: #{ex.message}"
     end
   end
 

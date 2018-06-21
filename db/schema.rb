@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_21_092959) do
+ActiveRecord::Schema.define(version: 2018_06_21_152417) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -20,6 +20,15 @@ ActiveRecord::Schema.define(version: 2018_06_21_092959) do
     t.json "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "network_adapters", force: :cascade do |t|
+    t.string "name", null: false
+    t.json "data", null: false
+    t.bigint "server_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["server_id"], name: "index_network_adapters_on_server_id"
   end
 
   create_table "nodes", force: :cascade do |t|
@@ -40,6 +49,7 @@ ActiveRecord::Schema.define(version: 2018_06_21_092959) do
     t.index ["chassis_id"], name: "index_servers_on_chassis_id"
   end
 
+  add_foreign_key "network_adapters", "servers"
   add_foreign_key "nodes", "servers"
   add_foreign_key "servers", "chassis"
 end
