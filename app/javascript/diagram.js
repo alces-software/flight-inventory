@@ -18,6 +18,9 @@ const drawDiagram = element => {
         data: {
           id: `server-${s.id}`,
           name: s.name,
+          type: 'Server',
+          // XXX Give this property a better name?
+          physicality: 'Physical',
         },
       };
     }),
@@ -27,10 +30,17 @@ const drawDiagram = element => {
           id: `node-${n.id}`,
           parent: `server-${n.server_id}`,
           name: n.name,
+          type: 'Node',
+          physicality: 'Logical',
         },
       };
     }),
   ];
+
+  const graphElementToLabel = element => {
+    const data = element._private.data;
+    return `${data.name} [${data.physicality} ${data.type}]`;
+  };
 
   cytoscape({
     container: element,
@@ -42,8 +52,7 @@ const drawDiagram = element => {
       {
         selector: 'node',
         css: {
-          // So name (rather than id) displayed for nodes.
-          content: 'data(name)',
+          content: graphElementToLabel,
           'text-valign': 'center',
           'text-halign': 'center',
         },
@@ -84,7 +93,9 @@ const drawDiagram = element => {
 
     layout: {
       name: 'grid',
-      padding: 5,
+      // XXX Slightly hacky way to make labels not overlap; come back and do
+      // better.
+      spacingFactor: 1.5,
     },
   });
 };
