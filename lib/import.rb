@@ -70,7 +70,9 @@ class Import
   end
 
   def metal_view(view_args)
-    output = ssh_connection.exec!("metal view '#{view_args}' 2> /dev/null")
+    metal_command = "metal view '#{view_args}' 2> /dev/null"
+    STDERR.puts ">>> #{metal_command}"
+    output = ssh_connection.exec!(metal_command)
     JSON.parse(output)
   end
 
