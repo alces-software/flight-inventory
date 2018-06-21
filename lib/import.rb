@@ -13,16 +13,45 @@ class Import
     # XXX Reset everything on each run for now.
     `rails db:reset`
 
+    import_chassis
     import_servers
     import_nodes
   end
 
   private
 
-  attr_reader :ssh_connection
+  attr_reader :ssh_connection,
+    :server_chassis_relationships
 
   def initialize(ssh_connection)
     @ssh_connection = ssh_connection
+  end
+
+  def import_chassis
+    all_chassis_data = metal_view('assets.chassis')
+
+    STDERR.puts "Found #{all_chassis_data.length} chassis"
+
+    chassis = all_chassis_data.map do |data|
+      name = asset_name(data)
+      STDERR.puts "Importing chassis #{name}..."
+      chassis = Chassis.create!(name: name, data: data)
+    end
+
+    # Create Server name -> Chassis name hash
+    @server_chassis_relationships = chassis.flat_map do |a_chassis|
+      server_names = a_chassis.data['servers'].flat_map do |reference|
+        # Reference is an @WilliamMcCumstie-style Metalware asset reference,
+        # e.g. `^rack1-r630-chassis-780-server1`; we just want the name of the
+        # referenced asset.
+        reference.gsub(/^\^/, '')
+      end
+
+      server_names.zip([a_chassis.name] * server_names.length)
+    end.to_h
+
+    STDERR.puts "Found these server-chassis relationships:"
+    STDERR.puts JSON.pretty_generate(server_chassis_relationships).gsub(/^/, '    ')
   end
 
   def import_servers
@@ -32,8 +61,13 @@ class Import
 
     all_server_data.each do |data|
       name = asset_name(data)
-      STDERR.puts "Importing server #{name}..."
-      Server.create!(name: name, data: data)
+      STDERR.puts "Importing server #{name}"
+
+      chassis_name = server_chassis_relationships.fetch(name)
+      chassis = Chassis.find_by_name!(chassis_name)
+      Server.create!(name: name, data: data, chassis: chassis)
+    rescue KeyError => ex
+      STDERR.puts "WARNING: Server #{name} has no chassis, skipping: #{ex.message}"
     end
   end
 
