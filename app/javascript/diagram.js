@@ -5,18 +5,31 @@ const initialize = () => {
 };
 
 const drawDiagram = element => {
-  const {servers, nodes} = JSON.parse(element.getAttribute('data-assets'));
+  const {chassis, servers, nodes} = JSON.parse(
+    element.getAttribute('data-assets'),
+  );
 
   const graphNodes = [
-    // XXX If a server doesnt have an associated node it currently appears
-    // smaller/like a node, should probably make graph nodes always appear same
-    // size regardless of (lack of) contents.
+    // XXX If a parent (e.g. server) doesn't have an associated child (e.g.
+    // node) it currently appears smaller/like a node, should probably make
+    // graph nodes always appear same size regardless of (lack of) contents.
     // XXX Have this data come from JSON encoding in Rails rather than being
     // hard-coded here?
+    ...chassis.map(c => {
+      return {
+        data: {
+          id: `chassis-${c.id}`,
+          name: c.name,
+          type: 'Chassis',
+          physicality: 'Physical',
+        },
+      };
+    }),
     ...servers.map(s => {
       return {
         data: {
           id: `server-${s.id}`,
+          parent: `chassis-${s.chassis_id}`,
           name: s.name,
           type: 'Server',
           // XXX Give this property a better name?
