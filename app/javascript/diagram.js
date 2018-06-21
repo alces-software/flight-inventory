@@ -1,4 +1,7 @@
 import cytoscape from 'cytoscape';
+import cola from 'cytoscape-cola';
+
+cytoscape.use(cola);
 
 const initialize = () => {
   drawDiagram(document.getElementById('root'));
@@ -70,6 +73,8 @@ const drawDiagram = element => {
           content: graphElementToLabel,
           'text-valign': 'center',
           'text-halign': 'center',
+          'text-wrap': 'wrap',
+          'text-max-width': '200px',
         },
       },
       {
@@ -107,10 +112,10 @@ const drawDiagram = element => {
     },
 
     layout: {
-      name: 'grid',
-      // XXX Slightly hacky way to make labels not overlap; come back and do
-      // better.
-      spacingFactor: 1.5,
+      name: 'cola',
+      animate: false,
+      nodeDimensionsIncludeLabels: true,
+      nodeSpacing: _node => 30,
     },
   });
 };

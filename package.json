@@ -3,7 +3,8 @@
   "private": true,
   "dependencies": {
     "@rails/webpacker": "3.5",
-    "cytoscape": "^3.2.13"
+    "cytoscape": "^3.2.13",
+    "cytoscape-cola": "^2.2.3"
   },
   "devDependencies": {
     "webpack-dev-server": "2.11.2"
