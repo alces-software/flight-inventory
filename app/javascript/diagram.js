@@ -9,44 +9,46 @@ const drawDiagram = element => {
     element.getAttribute('data-assets'),
   );
 
-  const graphNodes = [
-    // XXX If a parent (e.g. server) doesn't have an associated child (e.g.
-    // node) it currently appears smaller/like a node, should probably make
-    // graph nodes always appear same size regardless of (lack of) contents.
-    // XXX Have this data come from JSON encoding in Rails rather than being
-    // hard-coded here?
-    ...chassis.map(c => {
+  const graphId = (type, id) => `${type}-${id}`;
+
+  // XXX If a parent (e.g. server) doesn't have an associated child (e.g.
+  // node) it currently appears smaller/like a node, should probably make graph
+  // nodes always appear same size regardless of (lack of) contents.
+  // XXX Have this data come from JSON encoding in Rails rather than being
+  // hard-coded here?
+  const assetsToGraphNodes = (
+    assets,
+    type,
+    {parentType = null, physicality = 'Physical'} = {},
+  ) =>
+    assets.map(asset => {
+      let parentAttrs = {};
+      if (parentType) {
+        const parentDatabaseId = asset[`${parentType}_id`];
+        const parentGraphId = graphId(parentType, parentDatabaseId);
+        parentAttrs = {
+          parent: parentGraphId,
+        };
+      }
+
       return {
         data: {
-          id: `chassis-${c.id}`,
-          name: c.name,
-          type: 'Chassis',
-          physicality: 'Physical',
-        },
-      };
-    }),
-    ...servers.map(s => {
-      return {
-        data: {
-          id: `server-${s.id}`,
-          parent: `chassis-${s.chassis_id}`,
-          name: s.name,
-          type: 'Server',
+          id: graphId(type, asset.id),
+          name: asset.name,
+          type: type,
           // XXX Give this property a better name?
-          physicality: 'Physical',
+          physicality: physicality,
+          ...parentAttrs,
         },
       };
-    }),
-    ...nodes.map(n => {
-      return {
-        data: {
-          id: `node-${n.id}`,
-          parent: `server-${n.server_id}`,
-          name: n.name,
-          type: 'Node',
-          physicality: 'Logical',
-        },
-      };
+    });
+
+  const graphNodes = [
+    ...assetsToGraphNodes(chassis, 'chassis'),
+    ...assetsToGraphNodes(servers, 'server', {parentType: 'chassis'}),
+    ...assetsToGraphNodes(nodes, 'node', {
+      parentType: 'server',
+      physicality: 'Logical',
     }),
   ];
 
