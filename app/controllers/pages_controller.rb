@@ -3,6 +3,7 @@ class PagesController < ApplicationController
     Chassis,
     NetworkAdapter,
     Node,
+    Psu,
     Server,
   ]
 

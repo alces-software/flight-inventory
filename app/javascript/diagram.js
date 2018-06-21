@@ -9,7 +9,7 @@ const initialize = () => {
 
 const drawDiagram = element => {
   const assetsData = JSON.parse(element.getAttribute('data-assets'));
-  const {chassis, servers, nodes, networkAdapters} = assetsData;
+  const {chassis, servers, nodes, networkAdapters, psus} = assetsData;
 
   const graphId = (type, id) => `${type}-${id}`;
 
@@ -47,6 +47,9 @@ const drawDiagram = element => {
 
   const graphNodes = [
     ...assetsToGraphNodes(chassis, 'chassis'),
+    ...assetsToGraphNodes(psus, 'psu', {
+      parentType: 'chassis',
+    }),
     ...assetsToGraphNodes(servers, 'server', {parentType: 'chassis'}),
     ...assetsToGraphNodes(networkAdapters, 'network_adapter', {
       parentType: 'server',

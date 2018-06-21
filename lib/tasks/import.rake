@@ -15,6 +15,7 @@ namespace :alces do
         Chassis => 12,
         NetworkAdapter => 52,
         Node => 26,
+        Psu => 24,
         Server => 26,
       }.each do |klass, expected_number|
         number = klass.all.size

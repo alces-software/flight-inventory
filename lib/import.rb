@@ -14,6 +14,7 @@ class Import
     `rails db:reset`
 
     chassis_maps = import_chassis
+    import_psus(chassis_maps[Psu])
     server_maps = import_servers(chassis_maps[Server])
     import_network_adapters(server_maps[NetworkAdapter])
     import_nodes
@@ -28,7 +29,15 @@ class Import
   end
 
   def import_chassis
-    import_assets_of_type(Chassis, child_classes: [Server])
+    import_assets_of_type(Chassis, child_classes: [Server, Psu])
+  end
+
+  def import_psus(psus_to_chassis)
+    import_assets_of_type(
+      Psu,
+      parent_class: Chassis,
+      parents_map: psus_to_chassis
+    )
   end
 
   def import_servers(servers_to_chassis)
