@@ -13,9 +13,9 @@ class Import
     # XXX Reset everything on each run for now.
     `rails db:reset`
 
-    servers_to_chassis = import_chassis
-    network_adapters_to_servers = import_servers(servers_to_chassis)
-    import_network_adapters(network_adapters_to_servers)
+    chassis_maps = import_chassis
+    server_maps = import_servers(chassis_maps[Server])
+    import_network_adapters(server_maps[NetworkAdapter])
     import_nodes
   end
 
@@ -28,7 +28,7 @@ class Import
   end
 
   def import_chassis
-    import_assets_of_type(Chassis, child_class: Server)
+    import_assets_of_type(Chassis, child_classes: [Server])
   end
 
   def import_servers(servers_to_chassis)
@@ -36,7 +36,7 @@ class Import
       Server,
       parent_class: Chassis,
       parents_map: servers_to_chassis,
-      child_class: NetworkAdapter
+      child_classes: [NetworkAdapter]
     )
   end
 
@@ -48,12 +48,11 @@ class Import
     )
   end
 
-  def import_assets_of_type(klass, parent_class: nil, parents_map: nil, child_class: nil)
+  def import_assets_of_type(klass, parent_class: nil, parents_map: nil, child_classes: [])
     asset_type = klass.to_s.underscore
     human_asset_type = asset_type.humanize(capitalize: false)
 
     parent_type = parent_class.to_s.underscore
-    child_type = child_class.to_s.underscore
 
     STDERR.puts "Importing #{human_asset_type.pluralize}"
 
@@ -76,26 +75,28 @@ class Import
       STDERR.puts "WARNING: #{human_asset_type} #{name} has no #{parent_class}, skipping: #{ex.message}"
     end.compact
 
-    # Exit early unless there's a child class to find relationships with.
-    return unless child_class
+    child_classes.map do |child_class|
+      child_type = child_class.to_s.underscore
 
-    # Create Child name -> Asset name hash
-    relationships = assets.flat_map do |asset|
-      children_names = asset.data[child_type.pluralize].flat_map do |reference|
-        # Reference is an @WilliamMcCumstie-style Metalware asset reference,
-        # e.g. `^rack1-r630-chassis-780-server1`; we just want the name of the
-        # referenced asset.
-        reference.gsub(/^\^/, '')
-      end
+      # Create Child name -> Asset name hash
+      relationships = assets.flat_map do |asset|
+        children_names = asset.data[child_type.pluralize].flat_map do |reference|
+          # Reference is an @WilliamMcCumstie-style Metalware asset reference,
+          # e.g. `^rack1-r630-chassis-780-server1`; we just want the name of
+          # the referenced asset.
+          reference.gsub(/^\^/, '')
+        end
 
-      children_names.zip([asset.name] * children_names.length)
+        children_names.zip([asset.name] * children_names.length)
+      end.to_h
+
+      STDERR.puts "Found these #{child_type.humanize(capitalize: false)}-#{human_asset_type} relationships:"
+      STDERR.puts JSON.pretty_generate(relationships).gsub(/^/, '    ')
+
+      # Return value of this function should be
+      # `Hash[child_class, Hash[child_name, asset_name]]`.
+      [child_class, relationships]
     end.to_h
-
-    STDERR.puts "Found these #{child_type.humanize(capitalize: false)}-#{human_asset_type} relationships:"
-    STDERR.puts JSON.pretty_generate(relationships).gsub(/^/, '    ')
-
-    # Return the child-asset relationships to use when importing children.
-    relationships
   end
 
   def import_nodes
