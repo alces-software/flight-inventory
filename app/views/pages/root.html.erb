@@ -1,2 +1,50 @@
 
-<div id='root' data-assets="<%= @asset_data.to_json %>"/>
+<div id='root'>
+
+  <%# XXX Fake rack for now %>
+  <div class="rack">
+    <span class="title">Rack</span>
+
+    <% @chassis.each do |chassis| %>
+      <div class="chassis" title="Chassis: <%= chassis.name %>">
+        <span class="title">Chassis</span>
+
+      <div class="servers">
+        <% chassis.servers.each do |server| %>
+          <div class="server" title="Server: <%= server.name %>">
+            <span class="title">Server</span>
+
+            <div class="network-adapters">
+              <% server.network_adapters.each do |adapter| %>
+                <div class="network-adapter" title="Network adapter: <%= adapter.name %>">
+                  N
+                </div>
+              <% end %>
+            </div>
+
+          <div class="nodes">
+            <% server.nodes.each do |node| %>
+              <div class="node" title="Node">
+                <%= node.name %>
+              </div>
+            <% end %>
+          </div>
+
+          </div>
+        <% end %>
+      </div>
+
+      <div class="psus">
+        <% chassis.psus.each do |psu| %>
+          <div class="psu" title="PSU: <%= psu.name %>">
+            PSU
+          </div>
+        <% end %>
+      </div>
+
+      </div>
+    <% end %>
+
+  </div>
+
+</div>
