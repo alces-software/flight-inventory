@@ -10,12 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_21_173841) do
+ActiveRecord::Schema.define(version: 2018_06_22_160314) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "chassis", force: :cascade do |t|
+    t.string "name", null: false
+    t.json "data", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "groups", force: :cascade do |t|
     t.string "name", null: false
     t.json "data", null: false
     t.datetime "created_at", null: false
@@ -37,6 +44,8 @@ ActiveRecord::Schema.define(version: 2018_06_21_173841) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "server_id"
+    t.bigint "group_id"
+    t.index ["group_id"], name: "index_nodes_on_group_id"
     t.index ["server_id"], name: "index_nodes_on_server_id"
   end
 
@@ -59,6 +68,7 @@ ActiveRecord::Schema.define(version: 2018_06_21_173841) do
   end
 
   add_foreign_key "network_adapters", "servers"
+  add_foreign_key "nodes", "groups"
   add_foreign_key "nodes", "servers"
   add_foreign_key "psus", "chassis"
   add_foreign_key "servers", "chassis"

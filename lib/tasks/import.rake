@@ -13,6 +13,7 @@ namespace :alces do
     task sanity_check: :environment do
       {
         Chassis => 12,
+        Group => 4,
         NetworkAdapter => 52,
         Node => 26,
         Psu => 24,

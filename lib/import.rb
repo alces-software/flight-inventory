@@ -13,10 +13,14 @@ class Import
     # XXX Reset everything on each run for now.
     `rails db:reset`
 
+    # Physical assets.
     chassis_maps = import_chassis
     import_psus(chassis_maps[Psu])
     server_maps = import_servers(chassis_maps[Server])
     import_network_adapters(server_maps[NetworkAdapter])
+
+    # Logical assets.
+    import_groups
     import_nodes
   end
 
@@ -108,6 +112,23 @@ class Import
     end.to_h
   end
 
+  def import_groups
+    all_groups = metal_view('groups.map(&:name)')
+
+    STDERR.puts "Found #{all_groups.length} groups: #{all_groups.join(', ')}"
+
+    all_groups.map do |group|
+      STDERR.puts "Importing group #{group}..."
+
+      group_data = metal_view("groups.#{group}.to_h")
+
+      Group.create!(
+        name: group,
+        data: group_data,
+      )
+    end
+  end
+
   def import_nodes
     all_nodes = metal_view('nodes.map(&:name)')
     # XXX This gets all nodes on old Metalware; above only works on latest
@@ -132,10 +153,13 @@ class Import
       node_asset_data = metal_view("nodes.#{node}.asset")
       node_server = asset_name(node_asset_data)
 
+      node_group_name = metal_view("nodes.#{node}.group.name")
+
       Node.create!(
         name: node,
         data: node_data,
-        server: Server.find_by_name!(node_server)
+        server: Server.find_by_name!(node_server),
+        group: Group.find_by_name!(node_group_name),
       )
     end
   end
