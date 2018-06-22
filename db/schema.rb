@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_22_160314) do
+ActiveRecord::Schema.define(version: 2018_06_22_163613) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -20,6 +20,19 @@ ActiveRecord::Schema.define(version: 2018_06_22_160314) do
     t.json "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "genders", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "genders_nodes", id: false, force: :cascade do |t|
+    t.bigint "gender_id", null: false
+    t.bigint "node_id", null: false
+    t.index ["gender_id", "node_id"], name: "index_genders_nodes_on_gender_id_and_node_id"
+    t.index ["node_id", "gender_id"], name: "index_genders_nodes_on_node_id_and_gender_id"
   end
 
   create_table "groups", force: :cascade do |t|
