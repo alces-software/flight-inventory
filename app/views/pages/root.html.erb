@@ -7,16 +7,16 @@
 
     <% @chassis.each do |chassis| %>
       <div class="chassis" title="Chassis: <%= chassis.name %>">
-        <span class="title">Chassis</span>
+        <span class="title"><%= chassis.full_model %> chassis</span>
 
       <div class="servers">
         <% chassis.servers.each do |server| %>
           <div class="server" title="Server: <%= server.name %>">
-            <span class="title">Server</span>
+            <span class="title"><%= server.full_model %> server</span>
 
             <div class="network-adapters">
               <% server.network_adapters.each do |adapter| %>
-                <div class="network-adapter" title="Network adapter: <%= adapter.name %>">
+                <div class="network-adapter" title="Network adapter: <%= adapter.full_model %> <%= adapter.name %>">
                   N
                 </div>
               <% end %>
@@ -37,7 +37,7 @@
       <div class="psus">
         <% chassis.psus.each do |psu| %>
           <div class="psu" title="PSU: <%= psu.name %>">
-            PSU
+            <%= psu.full_model %> PSU
           </div>
         <% end %>
       </div>
