@@ -22,6 +22,7 @@ class Import
 
     # Physical assets.
     import_networks
+    import_network_switches
     chassis_maps = import_chassis
     import_psus(chassis_maps[Psu])
     server_maps = import_servers(chassis_maps[Server])
@@ -57,6 +58,10 @@ class Import
       cable_colour = data.fetch('cable_colour')
       Network.create!(name: name, cable_colour: cable_colour)
     end
+  end
+
+  def import_network_switches
+    import_assets_of_type(NetworkSwitch)
   end
 
   def import_chassis

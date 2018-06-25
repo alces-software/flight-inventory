@@ -1,0 +1,2 @@
+class NetworkSwitch < ApplicationRecord
+end

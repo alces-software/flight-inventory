@@ -18,6 +18,7 @@ namespace :alces do
         Network => 2,
         NetworkAdapter => 52,
         NetworkAdapterPort => 208,
+        NetworkSwitch => 2,
         Node => 26,
         Psu => 24,
         Server => 26,
