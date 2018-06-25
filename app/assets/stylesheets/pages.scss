@@ -12,6 +12,13 @@
   padding: 5px;
 }
 
+// Mixin for any top-level asset which appears directly in a rack.
+@mixin asset-in-rack {
+  @include asset;
+  background-color: lightgray;
+  margin: 20px;
+}
+
 .rack {
   @include asset;
   background-color: darkgrey;
@@ -20,12 +27,14 @@
   float: right;
 }
 
+.network-switch {
+  @include asset-in-rack;
+}
+
 .chassis {
-  @include asset;
-  margin: 20px;
+  @include asset-in-rack;
   display: grid;
   grid-template-columns: 75% 25%;
-  background-color: lightgray;
 
   .servers {
     grid-column-start: 1;

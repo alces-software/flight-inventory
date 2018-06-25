@@ -5,6 +5,12 @@
   <div class="rack">
     <span class="title">Rack</span>
 
+    <% @switches.each do |switch| %>
+      <div class="network-switch" title="Network switch: <%= switch.name %>">
+        <span class="title"><%= switch.full_model %> switch</span>
+      </div>
+    <% end %>
+
     <% @chassis.each do |chassis| %>
       <div class="chassis" title="Chassis: <%= chassis.name %>">
         <span class="title"><%= chassis.full_model %> chassis</span>
