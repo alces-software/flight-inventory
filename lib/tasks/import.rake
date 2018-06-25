@@ -15,6 +15,7 @@ namespace :alces do
         Chassis => 12,
         Gender => 8,
         Group => 4,
+        Network => 2,
         NetworkAdapter => 52,
         NetworkAdapterPort => 208,
         Node => 26,

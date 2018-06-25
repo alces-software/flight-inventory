@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_25_154400) do
+ActiveRecord::Schema.define(version: 2018_06_25_161413) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -57,6 +57,13 @@ ActiveRecord::Schema.define(version: 2018_06_25_154400) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["server_id"], name: "index_network_adapters_on_server_id"
+  end
+
+  create_table "networks", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "cable_colour", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "nodes", force: :cascade do |t|

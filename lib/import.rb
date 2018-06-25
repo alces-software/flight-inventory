@@ -14,6 +14,7 @@ class Import
     `rails db:reset`
 
     # Physical assets.
+    import_networks
     chassis_maps = import_chassis
     import_psus(chassis_maps[Psu])
     server_maps = import_servers(chassis_maps[Server])
@@ -30,6 +31,25 @@ class Import
 
   def initialize(ssh_connection)
     @ssh_connection = ssh_connection
+  end
+
+  def import_networks
+    # XXX Import networks without using `import_assets_of_type`, since these
+    # are superficially similar but also simpler/different (networks do not
+    # seem to have arbitrary other data associated with them, so don't need
+    # `data` field, but we do want to ensure we always extract the required
+    # `cable_colour` field).
+    STDERR.puts 'Importing networks'
+
+    networks_data = metal_view('assets.networks')
+    STDERR.puts "Found #{networks_data.length} networks"
+
+    networks_data.map do |data|
+      name = asset_name(data)
+      STDERR.puts "Importing network #{name}"
+      cable_colour = data.fetch('cable_colour')
+      Network.create!(name: name, cable_colour: cable_colour)
+    end
   end
 
   def import_chassis
