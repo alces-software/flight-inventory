@@ -1,5 +1,9 @@
 
+require 'rake'
+
 class Import
+  include Rake::DSL
+
   CONTROLLER_IP = '10.101.0.46'
   CONTROLLER_PASSWORD = ENV.fetch('ALCES_INSECURE_PASSWORD')
 
@@ -10,8 +14,11 @@ class Import
   end
 
   def run
-    # XXX Reset everything on each run for now.
-    `rails db:reset`
+    # XXX Reset everything on each run for now; `pkill` the server process
+    # first so (hopefully) no open database connections which would cause
+    # `rails db:reset` to fail.
+    sh 'pkill --full "puma .*flight-inventory"'
+    sh 'rails db:reset'
 
     # Physical assets.
     import_networks
