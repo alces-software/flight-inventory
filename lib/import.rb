@@ -58,7 +58,17 @@ class Import
       NetworkAdapter,
       parent_class: Server,
       parents_map: network_adapters_to_servers
-    )
+    ) do |adapters|
+      adapters.each do |adapter|
+        adapter.data.fetch('ports').each do |interface, _port_data|
+          STDERR.puts "Importing network adapter port #{interface} for adapter #{adapter.name}"
+          NetworkAdapterPort.create!(
+            interface: interface,
+            network_adapter: adapter
+          )
+        end
+      end
+    end
   end
 
   def import_assets_of_type(klass, parent_class: nil, parents_map: nil, child_classes: [])
@@ -87,6 +97,10 @@ class Import
     rescue KeyError => ex
       STDERR.puts "WARNING: #{human_asset_type} #{name} has no #{parent_class}, skipping: #{ex.message}"
     end.compact
+
+    # Allow performing additional asset-specific processing before returning
+    # the asset child relationships hash (below).
+    yield assets if block_given?
 
     child_classes.map do |child_class|
       child_type = child_class.to_s.underscore
