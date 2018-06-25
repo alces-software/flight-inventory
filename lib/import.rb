@@ -92,12 +92,27 @@ class Import
       parents_map: network_adapters_to_servers
     ) do |adapters|
       adapters.each do |adapter|
-        adapter.data.fetch('ports').each do |interface, _port_data|
+        adapter.data.fetch('ports').each do |interface, port_data|
           STDERR.puts "Importing network adapter port #{interface} for adapter #{adapter.name}"
-          NetworkAdapterPort.create!(
+          port = NetworkAdapterPort.create!(
             interface: interface,
             network_adapter: adapter
           )
+
+          connected_network_reference = port_data['network']
+          if connected_network_reference.present?
+            STDERR.puts "Port connected to network; creating connection"
+
+            network_name = asset_name_from_reference(connected_network_reference)
+            switch_reference = port_data.fetch('switch')
+            network_switch_name = asset_name_from_reference(switch_reference)
+
+            NetworkConnection.create!(
+              network: Network.find_by_name!(network_name),
+              network_adapter_port: port,
+              network_switch: NetworkSwitch.find_by_name!(network_switch_name)
+            )
+          end
         end
       end
     end
@@ -140,10 +155,7 @@ class Import
       # Create Child name -> Asset name hash
       relationships = assets.flat_map do |asset|
         children_names = asset.data[child_type.pluralize].flat_map do |reference|
-          # Reference is an @WilliamMcCumstie-style Metalware asset reference,
-          # e.g. `^rack1-r630-chassis-780-server1`; we just want the name of
-          # the referenced asset.
-          reference.gsub(/^\^/, '')
+          asset_name_from_reference(reference)
         end
 
         children_names.zip([asset.name] * children_names.length)
@@ -226,5 +238,12 @@ class Import
 
   def asset_name(asset_data)
     asset_data.dig('metadata', 'name')
+  end
+
+  def asset_name_from_reference(reference)
+    # Reference is an @WilliamMcCumstie-style Metalware asset reference, e.g.
+    # `^rack1-r630-chassis-780-server1`; we just want the name of the
+    # referenced asset.
+    reference.gsub(/^\^/, '')
   end
 end
