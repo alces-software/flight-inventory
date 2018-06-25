@@ -76,6 +76,13 @@
   background-color: lightblue;
 }
 
+.group {
+  // `border-color` set in `app/javascript/root.js`.
+  border-width: 2px;
+  border-style: dashed;
+  padding: 10px;
+}
+
 .title {
   text-decoration: underline;
 }

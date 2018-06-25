@@ -22,13 +22,20 @@
               <% end %>
             </div>
 
-          <div class="nodes">
-            <% server.nodes.each do |node| %>
-              <div class="node" title="Node">
-                <%= node.name %>
-              </div>
-            <% end %>
-          </div>
+            <div class="nodes">
+              <% server.nodes.each do |node| %>
+                <div
+                  class="group"
+                  title="Group: <%= node.group.name %>"
+                  data-group-name="<%= node.group.name %>"
+                >
+                  <strong class="group-name"><%= node.group.name %></strong>
+                  <div class="node" title="Node">
+                    <%= node.name %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
 
           </div>
         <% end %>
