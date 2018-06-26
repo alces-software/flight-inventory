@@ -13,6 +13,7 @@
 !/log/.keep
 !/tmp/.keep
 
+/elm-stuff
 /node_modules
 /yarn-error.log
 
@@ -23,6 +24,7 @@
 /config/master.key
 /public/packs
 /public/packs-test
+/elm-stuff
 /node_modules
 yarn-debug.log*
 .yarn-integrity
