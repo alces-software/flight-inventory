@@ -3,7 +3,6 @@
   "private": true,
   "dependencies": {
     "@rails/webpacker": "3.5",
-    "color-hash": "^1.0.3",
     "elm": "^0.18.0",
     "elm-webpack-loader": "^4.5.0"
   },
