@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Dict exposing (Dict)
 import Hashbow
@@ -6,6 +6,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
+import Json.Encode as E
+import Maybe.Extra
 
 
 -- MODEL
@@ -82,6 +84,7 @@ server name manufacturer model chassisId =
 type alias NetworkAdapter =
     PhysicalAsset
         { serverId : Int
+        , boundingRect : Maybe BoundingRect
         }
 
 
@@ -90,7 +93,25 @@ networkAdapter name manufacturer model serverId =
     , manufacturer = manufacturer
     , model = model
     , serverId = serverId
+    , boundingRect = Nothing
     }
+
+
+type alias BoundingRect =
+    { top : Float
+    , bottom : Float
+    , left : Float
+    , right : Float
+    }
+
+
+boundingRectDecoder : D.Decoder BoundingRect
+boundingRectDecoder =
+    P.decode BoundingRect
+        |> P.required "top" D.float
+        |> P.required "bottom" D.float
+        |> P.required "left" D.float
+        |> P.required "right" D.float
 
 
 type alias NetworkAdapterPort =
@@ -385,6 +406,7 @@ networkAdapterView : ( Int, NetworkAdapter ) -> Html Msg
 networkAdapterView ( adapterId, adapter ) =
     div
         [ class "network-adapter"
+        , attribute "data-network-adapter-id" (toString adapterId)
         , title <|
             String.join " "
                 [ "Network adapter:", fullModel adapter, adapter.name ]
@@ -440,7 +462,7 @@ assetTitle t =
 
 
 type Msg
-    = None
+    = InboundPortData ( String, E.Value )
 
 
 
@@ -449,7 +471,109 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    ( model, Cmd.none )
+    case model of
+        Initialized state ->
+            let
+                ( newState, cmd ) =
+                    updateState message state
+            in
+            ( Initialized newState, cmd )
+
+        Error _ ->
+            model ! []
+
+
+updateState : Msg -> State -> ( State, Cmd Msg )
+updateState message state =
+    case message of
+        InboundPortData ( dataTag, data ) ->
+            handlePortData state dataTag data ! []
+
+
+handlePortData : State -> String -> E.Value -> State
+handlePortData state dataTag data =
+    case dataTag of
+        "networkAdapterPositions" ->
+            let
+                decodedData =
+                    D.decodeValue positionsDecoder data
+            in
+            case decodedData of
+                Ok adapterIdsToBoundingRects ->
+                    updateNetworkAdapterBoundingRects state adapterIdsToBoundingRects
+
+                Err message ->
+                    -- XXX Handle this better
+                    let
+                        log =
+                            Debug.log "Got bad data from JS" message
+                    in
+                    state
+
+        _ ->
+            -- XXX Handle this better
+            let
+                log =
+                    Debug.log "Don't know how to handle dataTag" dataTag
+            in
+            state
+
+
+positionsDecoder : D.Decoder (List ( Int, BoundingRect ))
+positionsDecoder =
+    D.list
+        (D.map2
+            (,)
+            (D.index 0 D.int)
+            (D.index 1 boundingRectDecoder)
+        )
+
+
+updateNetworkAdapterBoundingRects : State -> List ( Int, BoundingRect ) -> State
+updateNetworkAdapterBoundingRects state adapterIdsToBoundingRects =
+    let
+        adapters =
+            state.networkAdapters
+
+        adaptersWithNewRects =
+            -- Dict of NetworkAdapter IDs and NetworkAdapters with new bounding
+            -- rects, where the adapter both appears in the state and its ID is
+            -- in the list passed (which should be all of them, but we can't
+            -- guarantee what JS might send us).
+            List.map
+                (\( adapterId, rect ) ->
+                    let
+                        currentAdapter =
+                            Dict.get adapterId adapters
+
+                        newAdapter =
+                            Maybe.map
+                                (\adapter ->
+                                    { adapter | boundingRect = Just rect }
+                                )
+                                currentAdapter
+                    in
+                    Maybe.map
+                        (\newAdapter_ -> ( adapterId, newAdapter_ ))
+                        newAdapter
+                )
+                adapterIdsToBoundingRects
+                |> Maybe.Extra.values
+                |> Dict.fromList
+
+        newAdapters =
+            Dict.intersect
+                adaptersWithNewRects
+                adapters
+    in
+    { state | networkAdapters = newAdapters }
+
+
+
+-- PORTS
+
+
+port jsToElm : (( String, E.Value ) -> msg) -> Sub msg
 
 
 
@@ -458,7 +582,7 @@ update message model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    jsToElm InboundPortData
 
 
 
