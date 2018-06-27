@@ -1,11 +1,9 @@
 import Elm from 'Main';
 
-const networkAdapterIdAttr = 'data-network-adapter-id';
-
 const initialize = () => {
   const elmApp = initializeApp();
 
-  const handleViewportChange = sendPositionsData(elmApp);
+  const handleViewportChange = sendAllPositions(elmApp);
 
   // Slightly arbitrary tiny wait, after which the app should (hopefully) have
   // initially rendered, before we send the initial positions of elements to
@@ -26,22 +24,24 @@ const initializeApp = () => {
   return Elm.Main.embed(target, assetsData);
 };
 
-const sendPositionsData = elmApp => () => {
-  const adapterElements = Array.from(
-    document.querySelectorAll(`[${networkAdapterIdAttr}]`),
-  );
+const sendAllPositions = elmApp => () => {
+  [
+    {idAttr: 'data-network-adapter-id', elmDataTag: 'networkAdapterPositions'},
+    {idAttr: 'data-network-switch-id', elmDataTag: 'networkSwitchPositions'},
+  ].forEach(args => sendPositionsForElements({...args, elmApp: elmApp}));
+};
 
-  const adaptersWithBoundingRects = adapterElements.map(element => {
-    const elementAssetId = +element.getAttribute(networkAdapterIdAttr);
+const sendPositionsForElements = ({idAttr, elmDataTag, elmApp}) => {
+  const elements = Array.from(document.querySelectorAll(`[${idAttr}]`));
+
+  const elementIdsWithBoundingRects = elements.map(element => {
+    const elementAssetId = +element.getAttribute(idAttr);
     const boundingRect = element.getBoundingClientRect();
 
     return [elementAssetId, boundingRect];
   });
 
-  elmApp.ports.jsToElm.send([
-    'networkAdapterPositions',
-    adaptersWithBoundingRects,
-  ]);
+  elmApp.ports.jsToElm.send([elmDataTag, elementIdsWithBoundingRects]);
 };
 
 export default initialize;

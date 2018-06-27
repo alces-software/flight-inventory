@@ -162,7 +162,17 @@ network name cableColour =
 
 
 type alias NetworkSwitch =
-    PhysicalAsset {}
+    PhysicalAsset
+        { boundingRect : Maybe BoundingRect
+        }
+
+
+networkSwitch name manufacturer model =
+    { name = name
+    , manufacturer = manufacturer
+    , model = model
+    , boundingRect = Nothing
+    }
 
 
 type alias Psu =
@@ -308,9 +318,7 @@ networkDecoder =
 
 networkSwitchDecoder : D.Decoder NetworkSwitch
 networkSwitchDecoder =
-    -- XXX NetworkSwitch data is identical to Chassis data currently, so can
-    -- just alias.
-    chassisDecoder
+    physicalAssetDecoder networkSwitch
 
 
 nodeDecoder : D.Decoder Node
@@ -353,7 +361,7 @@ htmlLayer : State -> Html Msg
 htmlLayer state =
     let
         switches =
-            Dict.values state.networkSwitches
+            Dict.toList state.networkSwitches
 
         chassis =
             Dict.toList state.chassis
@@ -368,9 +376,13 @@ htmlLayer state =
         )
 
 
-switchView : NetworkSwitch -> Html Msg
-switchView switch =
-    div [ class "network-switch", title ("Network switch: " ++ switch.name) ]
+switchView : ( Int, NetworkSwitch ) -> Html Msg
+switchView ( switchId, switch ) =
+    div
+        [ class "network-switch"
+        , attribute "data-network-switch-id" (toString switchId)
+        , title ("Network switch: " ++ switch.name)
+        ]
         [ assetTitle <| (fullModel switch ++ " switch")
         ]
 
@@ -550,21 +562,16 @@ handlePortData : State -> String -> E.Value -> State
 handlePortData state dataTag data =
     case dataTag of
         "networkAdapterPositions" ->
-            let
-                decodedData =
-                    D.decodeValue positionsDecoder data
-            in
-            case decodedData of
-                Ok adapterIdsToBoundingRects ->
-                    updateNetworkAdapterBoundingRects state adapterIdsToBoundingRects
+            { state
+                | networkAdapters =
+                    handlePositionsMessage state.networkAdapters data
+            }
 
-                Err message ->
-                    -- XXX Handle this better
-                    let
-                        log =
-                            Debug.log "Got bad data from JS" message
-                    in
-                    state
+        "networkSwitchPositions" ->
+            { state
+                | networkSwitches =
+                    handlePositionsMessage state.networkSwitches data
+            }
 
         _ ->
             -- XXX Handle this better
@@ -573,6 +580,29 @@ handlePortData state dataTag data =
                     Debug.log "Don't know how to handle dataTag" dataTag
             in
             state
+
+
+type alias WithBoundingRects a =
+    Dict Int { a | boundingRect : Maybe BoundingRect }
+
+
+handlePositionsMessage : WithBoundingRects a -> E.Value -> WithBoundingRects a
+handlePositionsMessage currentAssets data =
+    let
+        decodedData =
+            D.decodeValue positionsDecoder data
+    in
+    case decodedData of
+        Ok adapterIdsToBoundingRects ->
+            updateAssetBoundingRects currentAssets adapterIdsToBoundingRects
+
+        Err message ->
+            -- XXX Handle this better
+            let
+                log =
+                    Debug.log "Got bad data from JS" message
+            in
+            currentAssets
 
 
 positionsDecoder : D.Decoder (List ( Int, BoundingRect ))
@@ -585,44 +615,38 @@ positionsDecoder =
         )
 
 
-updateNetworkAdapterBoundingRects : State -> List ( Int, BoundingRect ) -> State
-updateNetworkAdapterBoundingRects state adapterIdsToBoundingRects =
+updateAssetBoundingRects : WithBoundingRects a -> List ( Int, BoundingRect ) -> WithBoundingRects a
+updateAssetBoundingRects currentAssets assetIdsToNewRects =
     let
-        adapters =
-            state.networkAdapters
-
-        adaptersWithNewRects =
-            -- Dict of NetworkAdapter IDs and NetworkAdapters with new bounding
-            -- rects, where the adapter both appears in the state and its ID is
-            -- in the list passed (which should be all of them, but we can't
-            -- guarantee what JS might send us).
+        assetsWithNewRects =
+            -- Dict of asset IDs and assets with new bounding rects, where the
+            -- asset both appears in the state and its ID is in the list passed
+            -- (which currently should be all of them, but we can't guarantee what JS
+            -- might send us).
             List.map
-                (\( adapterId, rect ) ->
+                (\( assetId, rect ) ->
                     let
-                        currentAdapter =
-                            Dict.get adapterId adapters
+                        currentAsset =
+                            Dict.get assetId currentAssets
 
-                        newAdapter =
+                        newAsset =
                             Maybe.map
-                                (\adapter ->
-                                    { adapter | boundingRect = Just rect }
+                                (\asset ->
+                                    { asset | boundingRect = Just rect }
                                 )
-                                currentAdapter
+                                currentAsset
                     in
                     Maybe.map
-                        (\newAdapter_ -> ( adapterId, newAdapter_ ))
-                        newAdapter
+                        (\newAsset_ -> ( assetId, newAsset_ ))
+                        newAsset
                 )
-                adapterIdsToBoundingRects
+                assetIdsToNewRects
                 |> Maybe.Extra.values
                 |> Dict.fromList
-
-        newAdapters =
-            Dict.intersect
-                adaptersWithNewRects
-                adapters
     in
-    { state | networkAdapters = newAdapters }
+    Dict.intersect
+        assetsWithNewRects
+        currentAssets
 
 
 
