@@ -628,17 +628,12 @@ updateAssetBoundingRects currentAssets assetIdsToNewRects =
                     let
                         currentAsset =
                             Dict.get assetId currentAssets
-
-                        newAsset =
-                            Maybe.map
-                                (\asset ->
-                                    { asset | boundingRect = Just rect }
-                                )
-                                currentAsset
                     in
                     Maybe.map
-                        (\newAsset_ -> ( assetId, newAsset_ ))
-                        newAsset
+                        (\asset ->
+                            ( assetId, { asset | boundingRect = Just rect } )
+                        )
+                        currentAsset
                 )
                 assetIdsToNewRects
                 |> Maybe.Extra.values
