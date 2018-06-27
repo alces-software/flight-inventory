@@ -7,9 +7,19 @@ import Html.Attributes exposing (..)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 import Json.Encode as E
+import List.Extra
 import Maybe.Extra
-import Svg exposing (line, svg)
-import Svg.Attributes exposing (stroke, x1, x2, y1, y2)
+import Svg exposing (Svg, line, svg)
+import Svg.Attributes
+    exposing
+        ( stroke
+        , strokeLinecap
+        , strokeWidth
+        , x1
+        , x2
+        , y1
+        , y2
+        )
 
 
 -- MODEL
@@ -138,6 +148,13 @@ boundingRectLeftMiddlePoint rect =
 
 type alias Point =
     { x : Float, y : Float }
+
+
+type alias Line =
+    { start : Point
+    , end : Point
+    , width : Int
+    }
 
 
 type alias NetworkAdapterPort =
@@ -510,28 +527,127 @@ assetTitle t =
 
 svgLayer : State -> Html msg
 svgLayer state =
-    let
-        leftMiddlePoints =
-            Dict.values state.networkAdapters
-                |> List.map
-                    (.boundingRect >> Maybe.map boundingRectLeftMiddlePoint)
-                |> Maybe.Extra.values
-
-        pointLine =
-            \point ->
-                line
-                    [ x1 (toString point.x)
-                    , y1 (toString point.y)
-                    , x2 (toString (point.x - 100))
-                    , y2 (toString point.y)
-                    , stroke "blue"
-                    ]
-                    []
-    in
     -- XXX Consider using https://github.com/elm-community/typed-svg instead.
     svg
         [ Svg.Attributes.class "svg-layer" ]
-        (List.map pointLine leftMiddlePoints)
+        (Dict.values state.networks
+            |> List.map (drawNetwork state)
+            |> List.concat
+        )
+
+
+drawNetwork : State -> Network -> List (Svg msg)
+drawNetwork state network =
+    let
+        connections =
+            Dict.values
+                state.networkConnections
+                |> List.filter (\con -> con.networkId == network.id)
+
+        switches =
+            linkedAssets connections .networkSwitchId .networkSwitches
+
+        ports =
+            linkedAssets connections .networkAdapterPortId .networkAdapterPorts
+
+        adapters =
+            linkedAssets ports .networkAdapterId .networkAdapters
+
+        linkedAssets : List a -> (a -> Int) -> (State -> Dict Int b) -> List b
+        linkedAssets assets toLinkedAssetId toLinkedAssets =
+            List.map toLinkedAssetId assets
+                |> List.Extra.unique
+                |> List.map (toLinkedAssets state |> flip Dict.get)
+                |> Maybe.Extra.values
+
+        xAxis =
+            -- XXX do better
+            600
+    in
+    drawNetworkAlongAxis xAxis network switches adapters
+
+
+drawNetworkAlongAxis : Float -> Network -> List NetworkSwitch -> List NetworkAdapter -> List (Svg msg)
+drawNetworkAlongAxis xAxis network switches adapters =
+    let
+        switchLines =
+            linesForAssets trunkLineWidth switches
+
+        adapterLines =
+            linesForAssets regularLineWidth adapters
+
+        linesForAssets =
+            \width assetsWithRects ->
+                List.map
+                    (\start -> Line start (endPointFromStart start) width)
+                    (startPointsForAssets assetsWithRects)
+
+        startPointsForAssets =
+            \assetsWithRects ->
+                List.map
+                    (.boundingRect >> Maybe.map boundingRectLeftMiddlePoint)
+                    assetsWithRects
+                    |> Maybe.Extra.values
+
+        endPointFromStart =
+            \start -> { x = xAxis, y = start.y }
+
+        horizontalLines =
+            List.concat [ switchLines, adapterLines ]
+
+        endPoints =
+            List.map .end horizontalLines
+
+        topPoint =
+            List.Extra.minimumBy .y endPoints
+
+        bottomPoint =
+            List.Extra.maximumBy .y endPoints
+                -- Offset the bottom point's Y coord slightly so it lines up
+                -- neatly with the bottom-most horizontal line (without this it
+                -- extends slightly beyond this, due to our use of
+                -- `strokeLinecap "square"`).
+                |> Maybe.map (\p -> Point p.x (p.y - bottomPointOffset))
+
+        bottomPointOffset =
+            regularLineWidth / 2
+
+        networkAxisLine =
+            case ( topPoint, bottomPoint ) of
+                ( Just t, Just b ) ->
+                    Just { start = t, end = b, width = trunkLineWidth }
+
+                _ ->
+                    Nothing
+
+        allLines =
+            case networkAxisLine of
+                Just l ->
+                    l :: horizontalLines
+
+                Nothing ->
+                    horizontalLines
+
+        trunkLineWidth =
+            regularLineWidth * 2
+
+        regularLineWidth =
+            2
+
+        drawLine =
+            \lineRecord ->
+                line
+                    [ x1 <| toString lineRecord.start.x
+                    , y1 <| toString lineRecord.start.y
+                    , x2 <| toString lineRecord.end.x
+                    , y2 <| toString lineRecord.end.y
+                    , stroke network.cableColour
+                    , strokeWidth <| toString lineRecord.width
+                    , strokeLinecap "square"
+                    ]
+                    []
+    in
+    List.map drawLine allLines
 
 
 
