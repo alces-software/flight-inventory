@@ -370,10 +370,10 @@ htmlLayer : State -> Html Msg
 htmlLayer state =
     let
         switches =
-            Dict.toList state.networkSwitches
+            Dict.values state.networkSwitches
 
         chassis =
-            Dict.toList state.chassis
+            Dict.values state.chassis
     in
     -- XXX Fake rack for now
     div [ class "rack" ]
@@ -385,30 +385,30 @@ htmlLayer state =
         )
 
 
-switchView : ( Int, NetworkSwitch ) -> Html Msg
-switchView ( switchId, switch ) =
+switchView : NetworkSwitch -> Html Msg
+switchView switch =
     div
         [ class "network-switch"
-        , attribute "data-network-switch-id" (toString switchId)
+        , attribute "data-network-switch-id" (toString switch.id)
         , title ("Network switch: " ++ switch.name)
         ]
         [ assetTitle <| (fullModel switch ++ " switch")
         ]
 
 
-chassisView : State -> ( Int, Chassis ) -> Html Msg
-chassisView state ( chassisId, chassis ) =
+chassisView : State -> Chassis -> Html Msg
+chassisView state chassis =
     let
         chassisServers =
-            Dict.toList <|
+            Dict.values <|
                 Dict.filter
-                    (\serverId server -> server.chassisId == chassisId)
+                    (\serverId server -> server.chassisId == chassis.id)
                     state.servers
 
         chassisPsus =
-            Dict.toList <|
+            Dict.values <|
                 Dict.filter
-                    (\psuId psu -> psu.chassisId == chassisId)
+                    (\psuId psu -> psu.chassisId == chassis.id)
                     state.psus
     in
     div [ class "chassis", title ("Chassis: " ++ chassis.name) ]
@@ -425,19 +425,19 @@ chassisView state ( chassisId, chassis ) =
         )
 
 
-serverView : State -> ( Int, Server ) -> Html Msg
-serverView state ( serverId, server ) =
+serverView : State -> Server -> Html Msg
+serverView state server =
     let
         serverNetworkAdapters =
-            Dict.toList <|
+            Dict.values <|
                 Dict.filter
-                    (\adapterId adapter -> adapter.serverId == serverId)
+                    (\adapterId adapter -> adapter.serverId == server.id)
                     state.networkAdapters
 
         serverNodes =
-            Dict.toList <|
+            Dict.values <|
                 Dict.filter
-                    (\nodeId node -> node.serverId == serverId)
+                    (\nodeId node -> node.serverId == server.id)
                     state.nodes
     in
     div [ class "server", title ("Server: " ++ server.name) ]
@@ -453,11 +453,11 @@ serverView state ( serverId, server ) =
         )
 
 
-networkAdapterView : ( Int, NetworkAdapter ) -> Html Msg
-networkAdapterView ( adapterId, adapter ) =
+networkAdapterView : NetworkAdapter -> Html Msg
+networkAdapterView adapter =
     div
         [ class "network-adapter"
-        , attribute "data-network-adapter-id" (toString adapterId)
+        , attribute "data-network-adapter-id" (toString adapter.id)
         , title <|
             String.join " "
                 [ "Network adapter:", fullModel adapter, adapter.name ]
@@ -465,8 +465,8 @@ networkAdapterView ( adapterId, adapter ) =
         [ text "N" ]
 
 
-nodeView : State -> ( Int, Node ) -> Html Msg
-nodeView state ( nodeId, node ) =
+nodeView : State -> Node -> Html Msg
+nodeView state node =
     let
         nodeGroup =
             Dict.get node.groupId state.groups
@@ -497,8 +497,8 @@ nodeView state ( nodeId, node ) =
             Debug.crash ("Node has no group: " ++ node.name)
 
 
-psuView : ( Int, Psu ) -> Html Msg
-psuView ( psuId, psu ) =
+psuView : Psu -> Html Msg
+psuView psu =
     div [ class "psu", title <| "PSU: " ++ psu.name ]
         [ text (fullModel psu ++ " PSU") ]
 
