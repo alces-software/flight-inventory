@@ -9,14 +9,16 @@ import Json.Decode.Pipeline as P
 import Json.Encode as E
 import List.Extra
 import Maybe.Extra
-import Svg exposing (Svg, line, svg)
+import Svg exposing (Svg, line, svg, text_)
 import Svg.Attributes
     exposing
         ( stroke
         , strokeLinecap
         , strokeWidth
+        , x
         , x1
         , x2
+        , y
         , y1
         , y2
         )
@@ -598,10 +600,10 @@ drawNetworkAlongAxis xAxis network switches adapters =
         endPoints =
             List.map .end horizontalLines
 
-        topPoint =
+        maybeTopPoint =
             List.Extra.minimumBy .y endPoints
 
-        bottomPoint =
+        maybeBottomPoint =
             List.Extra.maximumBy .y endPoints
                 -- Offset the bottom point's Y coord slightly so it lines up
                 -- neatly with the bottom-most horizontal line (without this it
@@ -612,42 +614,57 @@ drawNetworkAlongAxis xAxis network switches adapters =
         bottomPointOffset =
             regularLineWidth / 2
 
-        networkAxisLine =
-            case ( topPoint, bottomPoint ) of
-                ( Just t, Just b ) ->
-                    Just { start = t, end = b, width = trunkLineWidth }
-
-                _ ->
-                    Nothing
-
-        allLines =
-            case networkAxisLine of
-                Just l ->
-                    l :: horizontalLines
-
-                Nothing ->
-                    horizontalLines
-
         trunkLineWidth =
             regularLineWidth * 2
 
         regularLineWidth =
             2
-
-        drawLine =
-            \lineRecord ->
-                line
-                    [ x1 <| toString lineRecord.start.x
-                    , y1 <| toString lineRecord.start.y
-                    , x2 <| toString lineRecord.end.x
-                    , y2 <| toString lineRecord.end.y
-                    , stroke network.cableColour
-                    , strokeWidth <| toString lineRecord.width
-                    , strokeLinecap "square"
-                    ]
-                    []
     in
-    List.map drawLine allLines
+    case ( maybeTopPoint, maybeBottomPoint ) of
+        ( Just top, Just bottom ) ->
+            let
+                networkAxisLine =
+                    { start = top
+                    , end = bottom
+                    , width = trunkLineWidth
+                    }
+
+                allLines =
+                    networkAxisLine :: horizontalLines
+
+                networkLabelPosition =
+                    Point top.x (top.y - 20)
+
+                networkLabel =
+                    text_
+                        [ x <| toString networkLabelPosition.x
+                        , y <| toString networkLabelPosition.y
+                        , Svg.Attributes.style <|
+                            "fill: "
+                                ++ network.cableColour
+                                ++ "; font-size: 20px;"
+                        ]
+                        [ Svg.text network.name ]
+
+                drawLine =
+                    \lineRecord ->
+                        line
+                            [ x1 <| toString lineRecord.start.x
+                            , y1 <| toString lineRecord.start.y
+                            , x2 <| toString lineRecord.end.x
+                            , y2 <| toString lineRecord.end.y
+                            , stroke network.cableColour
+                            , strokeWidth <| toString lineRecord.width
+                            , strokeLinecap "square"
+                            ]
+                            []
+            in
+            networkLabel :: List.map drawLine allLines
+
+        _ ->
+            -- If we don't have a top and a bottom point then we can't have any
+            -- points in the network at all, so nothing to draw.
+            []
 
 
 
