@@ -115,6 +115,10 @@ networkAdapter id name manufacturer model serverId =
     }
 
 
+type alias HasBoundingRect a =
+    { a | boundingRect : Maybe BoundingRect }
+
+
 type alias BoundingRect =
     { top : Float
     , bottom : Float
@@ -552,8 +556,15 @@ drawNetwork state network =
         ports =
             linkedAssets connections .networkAdapterPortId .networkAdapterPorts
 
-        adapters =
-            linkedAssets ports .networkAdapterId .networkAdapters
+        adaptersWithPorts =
+            List.map
+                (\p ->
+                    Maybe.map
+                        (\adapter -> ( adapter, p ))
+                        (Dict.get p.networkAdapterId state.networkAdapters)
+                )
+                ports
+                |> Maybe.Extra.values
 
         linkedAssets : List a -> (a -> Int) -> (State -> Dict Int b) -> List b
         linkedAssets assets toLinkedAssetId toLinkedAssets =
@@ -566,30 +577,48 @@ drawNetwork state network =
             -- XXX do better
             600
     in
-    drawNetworkAlongAxis xAxis network switches adapters
+    drawNetworkAlongAxis xAxis network switches adaptersWithPorts
 
 
-drawNetworkAlongAxis : Float -> Network -> List NetworkSwitch -> List NetworkAdapter -> List (Svg msg)
-drawNetworkAlongAxis xAxis network switches adapters =
+drawNetworkAlongAxis :
+    Float
+    -> Network
+    -> List NetworkSwitch
+    -> List ( NetworkAdapter, NetworkAdapterPort )
+    -> List (Svg msg)
+drawNetworkAlongAxis xAxis network switches adaptersWithPorts =
     let
         switchLines =
-            linesForAssets trunkLineWidth switches
+            List.map (lineForAsset trunkLineWidth) switches
+                |> Maybe.Extra.values
 
         adapterLines =
-            linesForAssets regularLineWidth adapters
+            List.map (\( _, _, l ) -> l) adaptersPortsAndLines
 
-        linesForAssets =
-            \width assetsWithRects ->
-                List.map
-                    (\start -> Line start (endPointFromStart start) width)
-                    (startPointsForAssets assetsWithRects)
+        adaptersPortsAndLines : List ( NetworkAdapter, NetworkAdapterPort, Line )
+        adaptersPortsAndLines =
+            List.map
+                (\( a, p ) ->
+                    Maybe.map
+                        (\l -> ( a, p, l ))
+                        (lineForAsset regularLineWidth a)
+                )
+                adaptersWithPorts
+                |> Maybe.Extra.values
 
-        startPointsForAssets =
-            \assetsWithRects ->
-                List.map
-                    (.boundingRect >> Maybe.map boundingRectLeftMiddlePoint)
-                    assetsWithRects
-                    |> Maybe.Extra.values
+        lineForAsset : Int -> HasBoundingRect a -> Maybe Line
+        lineForAsset width assetWithRect =
+            let
+                start =
+                    startPointForAsset assetWithRect
+            in
+            Maybe.map
+                (\s -> Line s (endPointFromStart s) width)
+                start
+
+        startPointForAsset : HasBoundingRect a -> Maybe Point
+        startPointForAsset =
+            .boundingRect >> Maybe.map boundingRectLeftMiddlePoint
 
         endPointFromStart =
             \start -> { x = xAxis, y = start.y }
@@ -632,19 +661,24 @@ drawNetworkAlongAxis xAxis network switches adapters =
                 allLines =
                     networkAxisLine :: horizontalLines
 
-                networkLabelPosition =
-                    Point top.x (top.y - 20)
-
                 networkLabel =
-                    text_
-                        [ x <| toString networkLabelPosition.x
-                        , y <| toString networkLabelPosition.y
-                        , Svg.Attributes.style <|
-                            "fill: "
-                                ++ network.cableColour
-                                ++ "; font-size: 20px;"
-                        ]
-                        [ Svg.text network.name ]
+                    drawLabel
+                        (Point top.x (top.y - 20))
+                        network.name
+                        "font-size: 20px;"
+
+                adapterLabels =
+                    List.map adapterLabel adaptersPortsAndLines
+
+                adapterLabel : ( NetworkAdapter, NetworkAdapterPort, Line ) -> Svg msg
+                adapterLabel ( a, p, l ) =
+                    let
+                        labelPosition =
+                            { x = l.start.x - 80
+                            , y = l.start.y - 5
+                            }
+                    in
+                    drawLabel labelPosition p.interface ""
 
                 drawLine =
                     \lineRecord ->
@@ -658,8 +692,26 @@ drawNetworkAlongAxis xAxis network switches adapters =
                             , strokeLinecap "square"
                             ]
                             []
+
+                drawLabel : Point -> String -> String -> Svg msg
+                drawLabel =
+                    \point label styles ->
+                        text_
+                            [ x <| toString point.x
+                            , y <| toString point.y
+                            , Svg.Attributes.style <|
+                                "fill: "
+                                    ++ network.cableColour
+                                    ++ "; "
+                                    ++ styles
+                            ]
+                            [ Svg.text label ]
             in
-            networkLabel :: List.map drawLine allLines
+            List.concat
+                [ List.map drawLine allLines
+                , adapterLabels
+                , [ networkLabel ]
+                ]
 
         _ ->
             -- If we don't have a top and a bottom point then we can't have any
@@ -725,7 +777,7 @@ handlePortData state dataTag data =
 
 
 type alias WithBoundingRects a =
-    Dict Int { a | boundingRect : Maybe BoundingRect }
+    Dict Int (HasBoundingRect a)
 
 
 handlePositionsMessage : WithBoundingRects a -> E.Value -> WithBoundingRects a
