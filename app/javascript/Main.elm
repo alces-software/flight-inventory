@@ -8,6 +8,8 @@ import Json.Decode as D
 import Json.Decode.Pipeline as P
 import Json.Encode as E
 import Maybe.Extra
+import Svg exposing (line, svg)
+import Svg.Attributes exposing (stroke, x1, x2, y1, y2)
 
 
 -- MODEL
@@ -102,6 +104,8 @@ type alias BoundingRect =
     , bottom : Float
     , left : Float
     , right : Float
+    , width : Float
+    , height : Float
     }
 
 
@@ -112,6 +116,24 @@ boundingRectDecoder =
         |> P.required "bottom" D.float
         |> P.required "left" D.float
         |> P.required "right" D.float
+        |> P.required "width" D.float
+        |> P.required "height" D.float
+
+
+boundingRectLeftMiddlePoint : BoundingRect -> Point
+boundingRectLeftMiddlePoint rect =
+    let
+        x =
+            rect.left
+
+        y =
+            rect.top + (rect.height / 2)
+    in
+    { x = x, y = y }
+
+
+type alias Point =
+    { x : Float, y : Float }
 
 
 type alias NetworkAdapterPort =
@@ -321,6 +343,14 @@ view model =
 
 stateView : State -> Html Msg
 stateView state =
+    div []
+        [ htmlLayer state
+        , svgLayer state
+        ]
+
+
+htmlLayer : State -> Html Msg
+htmlLayer state =
     let
         switches =
             Dict.values state.networkSwitches
@@ -455,6 +485,32 @@ psuView ( psuId, psu ) =
 assetTitle : String -> Html msg
 assetTitle t =
     span [ class "title" ] [ text t ]
+
+
+svgLayer : State -> Html msg
+svgLayer state =
+    let
+        leftMiddlePoints =
+            Dict.values state.networkAdapters
+                |> List.map
+                    (.boundingRect >> Maybe.map boundingRectLeftMiddlePoint)
+                |> Maybe.Extra.values
+
+        pointLine =
+            \point ->
+                line
+                    [ x1 (toString point.x)
+                    , y1 (toString point.y)
+                    , x2 (toString (point.x - 100))
+                    , y2 (toString point.y)
+                    , stroke "blue"
+                    ]
+                    []
+    in
+    -- XXX Consider using https://github.com/elm-community/typed-svg instead.
+    svg
+        [ Svg.Attributes.class "svg-layer" ]
+        (List.map pointLine leftMiddlePoints)
 
 
 
