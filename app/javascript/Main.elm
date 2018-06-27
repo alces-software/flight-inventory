@@ -38,7 +38,8 @@ type alias State =
 
 type alias Asset a =
     { a
-        | name : String
+        | id : Int
+        , name : String
     }
 
 
@@ -50,12 +51,13 @@ type alias PhysicalAsset a =
         }
 
 
-physicalAsset name manufacturer model =
+physicalAsset id name manufacturer model =
     -- Note: Have to define own constructor function here, and in similar
     -- places below, as extensible records do not currently define their own
     -- constructor with their alias name (see
     -- https://stackoverflow.com/a/47876225/2620402).
-    { name = name
+    { id = id
+    , name = name
     , manufacturer = manufacturer
     , model = model
     }
@@ -75,8 +77,9 @@ type alias Server =
         }
 
 
-server name manufacturer model chassisId =
-    { name = name
+server id name manufacturer model chassisId =
+    { id = id
+    , name = name
     , manufacturer = manufacturer
     , model = model
     , chassisId = chassisId
@@ -90,8 +93,9 @@ type alias NetworkAdapter =
         }
 
 
-networkAdapter name manufacturer model serverId =
-    { name = name
+networkAdapter id name manufacturer model serverId =
+    { id = id
+    , name = name
     , manufacturer = manufacturer
     , model = model
     , serverId = serverId
@@ -155,8 +159,9 @@ type alias Network =
         }
 
 
-network name cableColour =
-    { name = name
+network id name cableColour =
+    { id = id
+    , name = name
     , cableColour = cableColour
     }
 
@@ -167,8 +172,9 @@ type alias NetworkSwitch =
         }
 
 
-networkSwitch name manufacturer model =
-    { name = name
+networkSwitch id name manufacturer model =
+    { id = id
+    , name = name
     , manufacturer = manufacturer
     , model = model
     , boundingRect = Nothing
@@ -188,9 +194,10 @@ type alias Node =
         }
 
 
-nodeConstructor name serverId groupId =
+nodeConstructor id name serverId groupId =
     -- XXX Cannot call this `node` as this conflicts with `Html.node`.
-    { name = name
+    { id = id
+    , name = name
     , serverId = serverId
     , groupId = groupId
     }
@@ -200,8 +207,9 @@ type alias Group =
     Asset {}
 
 
-group name =
-    { name = name
+asset id name =
+    { id = id
+    , name = name
     }
 
 
@@ -270,6 +278,7 @@ physicalAssetDecoder constructor =
 
 assetDecoder constructor =
     P.decode constructor
+        |> P.required "id" D.int
         |> P.required "name" D.string
 
 
@@ -330,7 +339,7 @@ nodeDecoder =
 
 groupDecoder : D.Decoder Group
 groupDecoder =
-    assetDecoder group
+    assetDecoder asset
 
 
 
