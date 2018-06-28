@@ -1,11 +1,27 @@
 port module Main exposing (..)
 
+import Data.Chassis as Chassis exposing (Chassis)
+import Data.Network as Network exposing (Network)
+import Data.NetworkAdapter as NetworkAdapter exposing (NetworkAdapter)
+import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
+import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
+import Data.Node as Node exposing (Node)
+import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
+import Data.Psu as Psu exposing (Psu)
+import Data.Server as Server exposing (Server)
+import Data.State as State exposing (State)
 import Dict exposing (Dict)
+import Geometry.BoundingRect as BoundingRect
+    exposing
+        ( BoundingRect
+        , HasBoundingRect
+        )
+import Geometry.Line as Line exposing (Line)
+import Geometry.Point as Point exposing (Point)
 import Hashbow
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as D
-import Json.Decode.Pipeline as P
 import Json.Encode as E
 import List.Extra
 import Maybe.Extra
@@ -34,213 +50,6 @@ type Model
     | Error String
 
 
-type alias State =
-    { chassis : Dict Int Chassis
-    , servers : Dict Int Server
-    , psus : Dict Int Psu
-    , networkAdapters : Dict Int NetworkAdapter
-    , networkAdapterPorts : Dict Int NetworkAdapterPort
-    , networkConnections : Dict Int NetworkConnection
-    , networks : Dict Int Network
-    , networkSwitches : Dict Int NetworkSwitch
-    , nodes : Dict Int Node
-    , groups : Dict Int Group
-    }
-
-
-type alias Asset a =
-    { a
-        | id : Int
-        , name : String
-    }
-
-
-type alias PhysicalAsset a =
-    Asset
-        { a
-            | manufacturer : String
-            , model : String
-        }
-
-
-physicalAsset id name manufacturer model =
-    -- Note: Have to define own constructor function here, and in similar
-    -- places below, as extensible records do not currently define their own
-    -- constructor with their alias name (see
-    -- https://stackoverflow.com/a/47876225/2620402).
-    { id = id
-    , name = name
-    , manufacturer = manufacturer
-    , model = model
-    }
-
-
-type alias Chassis =
-    PhysicalAsset {}
-
-
-chassis =
-    physicalAsset
-
-
-type alias Server =
-    PhysicalAsset
-        { chassisId : Int
-        }
-
-
-server id name manufacturer model chassisId =
-    { id = id
-    , name = name
-    , manufacturer = manufacturer
-    , model = model
-    , chassisId = chassisId
-    }
-
-
-type alias NetworkAdapter =
-    PhysicalAsset
-        { serverId : Int
-        , boundingRect : Maybe BoundingRect
-        }
-
-
-networkAdapter id name manufacturer model serverId =
-    { id = id
-    , name = name
-    , manufacturer = manufacturer
-    , model = model
-    , serverId = serverId
-    , boundingRect = Nothing
-    }
-
-
-type alias HasBoundingRect a =
-    { a | boundingRect : Maybe BoundingRect }
-
-
-type alias BoundingRect =
-    { top : Float
-    , bottom : Float
-    , left : Float
-    , right : Float
-    , width : Float
-    , height : Float
-    }
-
-
-boundingRectDecoder : D.Decoder BoundingRect
-boundingRectDecoder =
-    P.decode BoundingRect
-        |> P.required "top" D.float
-        |> P.required "bottom" D.float
-        |> P.required "left" D.float
-        |> P.required "right" D.float
-        |> P.required "width" D.float
-        |> P.required "height" D.float
-
-
-boundingRectLeftMiddlePoint : BoundingRect -> Point
-boundingRectLeftMiddlePoint rect =
-    let
-        x =
-            rect.left
-
-        y =
-            rect.top + (rect.height / 2)
-    in
-    { x = x, y = y }
-
-
-type alias Point =
-    { x : Float, y : Float }
-
-
-type alias Line =
-    { start : Point
-    , end : Point
-    , width : Int
-    }
-
-
-type alias NetworkAdapterPort =
-    { interface : String
-    , networkAdapterId : Int
-    }
-
-
-type alias NetworkConnection =
-    { networkId : Int
-    , networkAdapterPortId : Int
-    , networkSwitchId : Int
-    }
-
-
-type alias Network =
-    Asset
-        { cableColour : String
-        }
-
-
-network id name cableColour =
-    { id = id
-    , name = name
-    , cableColour = cableColour
-    }
-
-
-type alias NetworkSwitch =
-    PhysicalAsset
-        { boundingRect : Maybe BoundingRect
-        }
-
-
-networkSwitch id name manufacturer model =
-    { id = id
-    , name = name
-    , manufacturer = manufacturer
-    , model = model
-    , boundingRect = Nothing
-    }
-
-
-type alias Psu =
-    PhysicalAsset
-        { chassisId : Int
-        }
-
-
-type alias Node =
-    Asset
-        { serverId : Int
-        , groupId : Int
-        }
-
-
-nodeConstructor id name serverId groupId =
-    -- XXX Cannot call this `node` as this conflicts with `Html.node`.
-    { id = id
-    , name = name
-    , serverId = serverId
-    , groupId = groupId
-    }
-
-
-type alias Group =
-    Asset {}
-
-
-asset id name =
-    { id = id
-    , name = name
-    }
-
-
-fullModel : PhysicalAsset a -> String
-fullModel { manufacturer, model } =
-    String.join " " [ manufacturer, model ]
-
-
 
 -- INIT
 
@@ -258,7 +67,7 @@ decodeInitialModel : D.Value -> Model
 decodeInitialModel value =
     let
         result =
-            D.decodeValue stateDecoder value
+            D.decodeValue State.decoder value
     in
     case result of
         Ok state ->
@@ -266,103 +75,6 @@ decodeInitialModel value =
 
         Err message ->
             Error message
-
-
-stateDecoder : D.Decoder State
-stateDecoder =
-    P.decode State
-        |> P.required "chassis" (assetDictDecoder chassisDecoder)
-        |> P.required "servers" (assetDictDecoder serverDecoder)
-        |> P.required "psus" (assetDictDecoder psuDecoder)
-        |> P.required "networkAdapters" (assetDictDecoder networkAdapterDecoder)
-        |> P.required "networkAdapterPorts" (assetDictDecoder networkAdapterPortDecoder)
-        |> P.required "networkConnections" (assetDictDecoder networkConnectionDecoder)
-        |> P.required "networks" (assetDictDecoder networkDecoder)
-        |> P.required "networkSwitches" (assetDictDecoder networkSwitchDecoder)
-        |> P.required "nodes" (assetDictDecoder nodeDecoder)
-        |> P.required "groups" (assetDictDecoder groupDecoder)
-
-
-assetDictDecoder : D.Decoder asset -> D.Decoder (Dict Int asset)
-assetDictDecoder assetDecoder =
-    D.list
-        (D.map2 (,)
-            (D.field "id" D.int)
-            assetDecoder
-        )
-        |> D.map Dict.fromList
-
-
-physicalAssetDecoder constructor =
-    assetDecoder constructor
-        |> P.requiredAt [ "data", "manufacturer" ] D.string
-        |> P.requiredAt [ "data", "model" ] D.string
-
-
-assetDecoder constructor =
-    P.decode constructor
-        |> P.required "id" D.int
-        |> P.required "name" D.string
-
-
-chassisDecoder : D.Decoder Chassis
-chassisDecoder =
-    physicalAssetDecoder chassis
-
-
-serverDecoder : D.Decoder Server
-serverDecoder =
-    physicalAssetDecoder server
-        |> P.required "chassis_id" D.int
-
-
-psuDecoder =
-    -- XXX PSU data is identical to Server data currently, so can just alias.
-    serverDecoder
-
-
-networkAdapterDecoder : D.Decoder NetworkAdapter
-networkAdapterDecoder =
-    physicalAssetDecoder networkAdapter
-        |> P.required "server_id" D.int
-
-
-networkAdapterPortDecoder : D.Decoder NetworkAdapterPort
-networkAdapterPortDecoder =
-    P.decode NetworkAdapterPort
-        |> P.required "interface" D.string
-        |> P.required "network_adapter_id" D.int
-
-
-networkConnectionDecoder : D.Decoder NetworkConnection
-networkConnectionDecoder =
-    P.decode NetworkConnection
-        |> P.required "network_id" D.int
-        |> P.required "network_adapter_port_id" D.int
-        |> P.required "network_switch_id" D.int
-
-
-networkDecoder : D.Decoder Network
-networkDecoder =
-    assetDecoder network
-        |> P.required "cable_colour" D.string
-
-
-networkSwitchDecoder : D.Decoder NetworkSwitch
-networkSwitchDecoder =
-    physicalAssetDecoder networkSwitch
-
-
-nodeDecoder : D.Decoder Node
-nodeDecoder =
-    assetDecoder nodeConstructor
-        |> P.required "server_id" D.int
-        |> P.required "group_id" D.int
-
-
-groupDecoder : D.Decoder Group
-groupDecoder =
-    assetDecoder asset
 
 
 
@@ -415,7 +127,7 @@ switchView switch =
         , attribute "data-network-switch-id" (toString switch.id)
         , title ("Network switch: " ++ switch.name)
         ]
-        [ assetTitle <| (fullModel switch ++ " switch")
+        [ assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
         ]
 
 
@@ -436,7 +148,7 @@ chassisView state chassis =
     in
     div [ class "chassis", title ("Chassis: " ++ chassis.name) ]
         (List.concat
-            [ [ assetTitle <| (fullModel chassis ++ " chassis") ]
+            [ [ assetTitle <| (PhysicalAsset.fullModel chassis ++ " chassis") ]
             , [ div
                     [ class "servers" ]
                     (List.map (serverView state) chassisServers)
@@ -465,7 +177,7 @@ serverView state server =
     in
     div [ class "server", title ("Server: " ++ server.name) ]
         (List.concat
-            [ [ assetTitle <| (fullModel server ++ " server") ]
+            [ [ assetTitle <| (PhysicalAsset.fullModel server ++ " server") ]
             , [ div [ class "network-adapters" ]
                     (List.map networkAdapterView serverNetworkAdapters)
               ]
@@ -483,7 +195,7 @@ networkAdapterView adapter =
         , attribute "data-network-adapter-id" (toString adapter.id)
         , title <|
             String.join " "
-                [ "Network adapter:", fullModel adapter, adapter.name ]
+                [ "Network adapter:", PhysicalAsset.fullModel adapter, adapter.name ]
         ]
         [ text "N" ]
 
@@ -523,7 +235,7 @@ nodeView state node =
 psuView : Psu -> Html Msg
 psuView psu =
     div [ class "psu", title <| "PSU: " ++ psu.name ]
-        [ text (fullModel psu ++ " PSU") ]
+        [ text (PhysicalAsset.fullModel psu ++ " PSU") ]
 
 
 assetTitle : String -> Html msg
@@ -618,7 +330,7 @@ drawNetworkAlongAxis xAxis network switches adaptersWithPorts =
 
         startPointForAsset : HasBoundingRect a -> Maybe Point
         startPointForAsset =
-            .boundingRect >> Maybe.map boundingRectLeftMiddlePoint
+            .boundingRect >> Maybe.map BoundingRect.leftMiddlePoint
 
         endPointFromStart =
             \start -> { x = xAxis, y = start.y }
@@ -805,7 +517,7 @@ positionsDecoder =
         (D.map2
             (,)
             (D.index 0 D.int)
-            (D.index 1 boundingRectDecoder)
+            (D.index 1 BoundingRect.decoder)
         )
 
 
