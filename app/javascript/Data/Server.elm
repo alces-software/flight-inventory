@@ -17,6 +17,7 @@ decoder =
         |> P.required "chassis_id" D.int
 
 
+create : Int -> String -> String -> String -> Int -> Server
 create id name manufacturer model chassisId =
     { id = id
     , name = name

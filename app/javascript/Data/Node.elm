@@ -19,6 +19,7 @@ decoder =
         |> P.required "group_id" D.int
 
 
+create : Int -> String -> Int -> Int -> Node
 create id name serverId groupId =
     { id = id
     , name = name

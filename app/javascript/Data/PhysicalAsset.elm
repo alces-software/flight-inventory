@@ -13,12 +13,14 @@ type alias PhysicalAsset a =
         }
 
 
+decoder : (Int -> String -> String -> String -> a) -> D.Decoder a
 decoder constructor =
     Asset.decoder constructor
         |> P.requiredAt [ "data", "manufacturer" ] D.string
         |> P.requiredAt [ "data", "model" ] D.string
 
 
+create : Int -> String -> String -> String -> PhysicalAsset {}
 create id name manufacturer model =
     -- Note: Have to define own constructor function here, and in similar
     -- places below, as extensible records do not currently define their own

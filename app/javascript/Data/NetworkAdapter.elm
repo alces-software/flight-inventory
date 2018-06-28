@@ -19,6 +19,7 @@ decoder =
         |> P.required "server_id" D.int
 
 
+create : Int -> String -> String -> String -> Int -> NetworkAdapter
 create id name manufacturer model serverId =
     { id = id
     , name = name

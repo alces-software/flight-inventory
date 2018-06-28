@@ -17,6 +17,7 @@ decoder =
     PhysicalAsset.decoder create
 
 
+create : Int -> String -> String -> String -> NetworkSwitch
 create id name manufacturer model =
     { id = id
     , name = name

@@ -11,12 +11,14 @@ type alias Asset a =
     }
 
 
+decoder : (Int -> String -> a) -> D.Decoder a
 decoder constructor =
     P.decode constructor
         |> P.required "id" D.int
         |> P.required "name" D.string
 
 
+create : Int -> String -> Asset {}
 create id name =
     { id = id
     , name = name

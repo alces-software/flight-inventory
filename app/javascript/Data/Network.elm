@@ -17,6 +17,7 @@ decoder =
         |> P.required "cable_colour" D.string
 
 
+create : Int -> String -> String -> Network
 create id name cableColour =
     { id = id
     , name = name
