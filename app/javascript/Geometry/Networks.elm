@@ -2,6 +2,7 @@ module Geometry.Networks
     exposing
         ( adapterHeight
         , adapterPortPosition
+        , switchHeight
         , xAxisForNetwork
         )
 
@@ -28,11 +29,30 @@ adapterHeight state =
                 >> List.map (State.connectionForPort state)
                 >> Maybe.Extra.values
                 >> List.length
-
-        pixelsPerConnection =
-            20
     in
     maxAdapterConnections * pixelsPerConnection
+
+
+switchHeight : State -> Int
+switchHeight state =
+    -- XXX DRY up with above?
+    let
+        maxNetworkConnections =
+            Dict.values state.networkSwitches
+                |> List.map numberConnectionsForSwitch
+                |> List.maximum
+                |> Maybe.withDefault 0
+
+        numberConnectionsForSwitch =
+            State.networksConnectedToSwitch state
+                >> List.length
+    in
+    maxNetworkConnections * pixelsPerConnection
+
+
+pixelsPerConnection : Int
+pixelsPerConnection =
+    20
 
 
 adapterPortPosition : State -> NetworkAdapterPort -> Maybe Point

@@ -4,6 +4,7 @@ module Data.State
         , connectionForPort
         , decoder
         , networksByName
+        , networksConnectedToSwitch
         , portsForAdapter
         )
 
@@ -21,6 +22,7 @@ import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 import List.Extra
+import Maybe.Extra
 
 
 type alias State =
@@ -78,3 +80,13 @@ networksByName : State -> List Network
 networksByName state =
     Dict.values state.networks
         |> List.sortBy .name
+
+
+networksConnectedToSwitch : State -> NetworkSwitch -> List Network
+networksConnectedToSwitch state switch =
+    Dict.values state.networkConnections
+        |> List.filter (.networkSwitchId >> (==) switch.id)
+        |> List.map .networkId
+        |> List.Extra.unique
+        |> List.map (flip Dict.get state.networks)
+        |> Maybe.Extra.values

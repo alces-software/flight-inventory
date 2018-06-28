@@ -42,23 +42,29 @@ htmlLayer state =
             -- do it once here but is wasteful and noticeably slows things down
             -- if we do it for every adapter.
             Geometry.Networks.adapterHeight state
+
+        switchHeight =
+            -- Do similar to `adapterHeight` here as well, although probably
+            -- less important here since most likely far fewer switches.
+            Geometry.Networks.switchHeight state
     in
     -- XXX Fake rack for now
     div [ class "rack" ]
         (List.concat
             [ [ assetTitle "Rack" ]
-            , List.map switchView switches
+            , List.map (switchView switchHeight) switches
             , List.map (chassisView adapterHeight state) chassis
             ]
         )
 
 
-switchView : NetworkSwitch -> Html Msg
-switchView switch =
+switchView : Int -> NetworkSwitch -> Html Msg
+switchView switchHeight switch =
     div
         [ class "network-switch"
         , attribute "data-network-switch-id" (toString switch.id)
         , title ("Network switch: " ++ switch.name)
+        , style [ ( "height", toString switchHeight ++ "px" ) ]
         ]
         [ assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
         ]
