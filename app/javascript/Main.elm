@@ -25,6 +25,7 @@ import Json.Decode as D
 import Json.Encode as E
 import List.Extra
 import Maybe.Extra
+import Msg exposing (Msg(..))
 import Svg exposing (Svg, line, svg, text_)
 import Svg.Attributes
     exposing
@@ -38,6 +39,7 @@ import Svg.Attributes
         , y1
         , y2
         )
+import Update
 
 
 -- MODEL
@@ -432,14 +434,6 @@ drawNetworkAlongAxis xAxis network switches adaptersWithPorts =
 
 
 
--- MESSAGE
-
-
-type Msg
-    = InboundPortData ( String, E.Value )
-
-
-
 -- UPDATE
 
 
@@ -449,105 +443,12 @@ update message model =
         Initialized state ->
             let
                 ( newState, cmd ) =
-                    updateState message state
+                    Update.updateState message state
             in
             ( Initialized newState, cmd )
 
         Error _ ->
             model ! []
-
-
-updateState : Msg -> State -> ( State, Cmd Msg )
-updateState message state =
-    case message of
-        InboundPortData ( dataTag, data ) ->
-            handlePortData state dataTag data ! []
-
-
-handlePortData : State -> String -> E.Value -> State
-handlePortData state dataTag data =
-    case dataTag of
-        "networkAdapterPositions" ->
-            { state
-                | networkAdapters =
-                    handlePositionsMessage state.networkAdapters data
-            }
-
-        "networkSwitchPositions" ->
-            { state
-                | networkSwitches =
-                    handlePositionsMessage state.networkSwitches data
-            }
-
-        _ ->
-            -- XXX Handle this better
-            let
-                log =
-                    Debug.log "Don't know how to handle dataTag" dataTag
-            in
-            state
-
-
-type alias WithBoundingRects a =
-    Dict Int (HasBoundingRect a)
-
-
-handlePositionsMessage : WithBoundingRects a -> E.Value -> WithBoundingRects a
-handlePositionsMessage currentAssets data =
-    let
-        decodedData =
-            D.decodeValue positionsDecoder data
-    in
-    case decodedData of
-        Ok adapterIdsToBoundingRects ->
-            updateAssetBoundingRects currentAssets adapterIdsToBoundingRects
-
-        Err message ->
-            -- XXX Handle this better
-            let
-                log =
-                    Debug.log "Got bad data from JS" message
-            in
-            currentAssets
-
-
-positionsDecoder : D.Decoder (List ( Int, BoundingRect ))
-positionsDecoder =
-    D.list
-        (D.map2
-            (,)
-            (D.index 0 D.int)
-            (D.index 1 BoundingRect.decoder)
-        )
-
-
-updateAssetBoundingRects : WithBoundingRects a -> List ( Int, BoundingRect ) -> WithBoundingRects a
-updateAssetBoundingRects currentAssets assetIdsToNewRects =
-    let
-        assetsWithNewRects =
-            -- Dict of asset IDs and assets with new bounding rects, where the
-            -- asset both appears in the state and its ID is in the list passed
-            -- (which currently should be all of them, but we can't guarantee what JS
-            -- might send us).
-            List.map
-                (\( assetId, rect ) ->
-                    let
-                        currentAsset =
-                            Dict.get assetId currentAssets
-                    in
-                    Maybe.map
-                        (\asset ->
-                            ( assetId, { asset | boundingRect = Just rect } )
-                        )
-                        currentAsset
-                )
-                assetIdsToNewRects
-                |> Maybe.Extra.values
-                |> Dict.fromList
-    in
-    Dict.intersect
-        assetsWithNewRects
-        currentAssets
 
 
 
