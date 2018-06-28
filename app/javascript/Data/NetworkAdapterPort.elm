@@ -5,7 +5,8 @@ import Json.Decode.Pipeline as P
 
 
 type alias NetworkAdapterPort =
-    { interface : String
+    { id : Int
+    , interface : String
     , networkAdapterId : Int
     }
 
@@ -13,5 +14,6 @@ type alias NetworkAdapterPort =
 decoder : D.Decoder NetworkAdapterPort
 decoder =
     P.decode NetworkAdapterPort
+        |> P.required "id" D.int
         |> P.required "interface" D.string
         |> P.required "network_adapter_id" D.int
