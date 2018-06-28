@@ -58,7 +58,7 @@ view model =
 
         Error message ->
             span []
-                [ text ("Error initializing form: " ++ message)
+                [ text ("Error initializing app: " ++ message)
                 ]
 
 
