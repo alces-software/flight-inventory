@@ -61,12 +61,13 @@ drawNetwork state network =
                 |> List.Extra.unique
                 |> List.map (toLinkedAssets state |> flip Dict.get)
                 |> Maybe.Extra.values
-
-        xAxis =
-            -- XXX do better
-            600
     in
-    drawNetworkAlongAxis state xAxis network switches adaptersWithPorts
+    case State.xAxisForNetwork state network of
+        Just xAxis ->
+            drawNetworkAlongAxis state xAxis network switches adaptersWithPorts
+
+        Nothing ->
+            []
 
 
 drawNetworkAlongAxis :

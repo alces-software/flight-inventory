@@ -4,6 +4,7 @@ module Data.State
         , adapterHeight
         , adapterPortPosition
         , decoder
+        , xAxisForNetwork
         )
 
 import Data.Chassis as Chassis exposing (Chassis)
@@ -147,3 +148,40 @@ connectionForPort : State -> NetworkAdapterPort -> Maybe NetworkConnection
 connectionForPort state port_ =
     Dict.values state.networkConnections
         |> List.Extra.find (\c -> c.networkAdapterPortId == port_.id)
+
+
+xAxisForNetwork : State -> Network -> Maybe Float
+xAxisForNetwork state network =
+    let
+        firstSwitchX =
+            Dict.values state.networkSwitches
+                |> List.head
+                |> Maybe.map .boundingRect
+                |> Maybe.Extra.join
+                |> Maybe.map .left
+
+        networksByName =
+            Dict.values state.networks
+                |> List.sortBy .name
+                |> List.reverse
+
+        networkSpacing =
+            100
+
+        networkIndex =
+            List.Extra.elemIndex network networksByName
+    in
+    case ( firstSwitchX, networkIndex ) of
+        ( Just switchX, Just index ) ->
+            let
+                xAxisOffset =
+                    -- Add 2 to index so rightmost network axis is offset from
+                    -- switches and adapters by twice usual offset; looks
+                    -- slightly nicer with some space between rack edge and
+                    -- network axes.
+                    ((index + 2) * networkSpacing) |> toFloat
+            in
+            Just <| switchX - xAxisOffset
+
+        _ ->
+            Nothing
