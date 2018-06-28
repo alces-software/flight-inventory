@@ -1,4 +1,10 @@
-module Data.State exposing (State, adapterPortPosition, decoder)
+module Data.State
+    exposing
+        ( State
+        , adapterHeight
+        , adapterPortPosition
+        , decoder
+        )
 
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.Group as Group exposing (Group)
@@ -55,6 +61,27 @@ assetDictDecoder assetDecoder =
             assetDecoder
         )
         |> D.map Dict.fromList
+
+
+adapterHeight : State -> Int
+adapterHeight state =
+    let
+        maxAdapterConnections =
+            Dict.values state.networkAdapters
+                |> List.map numberConnectionsForAdapter
+                |> List.maximum
+                |> Maybe.withDefault 0
+
+        numberConnectionsForAdapter =
+            portsForAdapter state
+                >> List.map (connectionForPort state)
+                >> Maybe.Extra.values
+                >> List.length
+
+        pixelsPerConnection =
+            20
+    in
+    maxAdapterConnections * pixelsPerConnection
 
 
 adapterPortPosition : State -> NetworkAdapterPort -> Maybe Point

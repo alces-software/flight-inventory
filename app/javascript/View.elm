@@ -32,13 +32,22 @@ htmlLayer state =
 
         chassis =
             Dict.values state.chassis
+
+        adapterHeight =
+            -- Calculate the height we should display NetworkAdapters at here
+            -- and thread this through, rather than at point of use, as the
+            -- calculation for what this should be is somewhat time consuming
+            -- and gives the same value for every adapter; this is fine if we
+            -- do it once here but is wasteful and noticeably slows things down
+            -- if we do it for every adapter.
+            State.adapterHeight state
     in
     -- XXX Fake rack for now
     div [ class "rack" ]
         (List.concat
             [ [ assetTitle "Rack" ]
             , List.map switchView switches
-            , List.map (chassisView state) chassis
+            , List.map (chassisView adapterHeight state) chassis
             ]
         )
 
@@ -54,8 +63,8 @@ switchView switch =
         ]
 
 
-chassisView : State -> Chassis -> Html Msg
-chassisView state chassis =
+chassisView : Int -> State -> Chassis -> Html Msg
+chassisView adapterHeight state chassis =
     let
         chassisServers =
             Dict.values <|
@@ -74,7 +83,7 @@ chassisView state chassis =
             [ [ assetTitle <| (PhysicalAsset.fullModel chassis ++ " chassis") ]
             , [ div
                     [ class "servers" ]
-                    (List.map (serverView state) chassisServers)
+                    (List.map (serverView adapterHeight state) chassisServers)
               ]
             , [ div [ class "psus" ]
                     (List.map psuView chassisPsus)
@@ -83,8 +92,8 @@ chassisView state chassis =
         )
 
 
-serverView : State -> Server -> Html Msg
-serverView state server =
+serverView : Int -> State -> Server -> Html Msg
+serverView adapterHeight state server =
     let
         serverNetworkAdapters =
             Dict.values <|
@@ -102,7 +111,10 @@ serverView state server =
         (List.concat
             [ [ assetTitle <| (PhysicalAsset.fullModel server ++ " server") ]
             , [ div [ class "network-adapters" ]
-                    (List.map networkAdapterView serverNetworkAdapters)
+                    (List.map
+                        (networkAdapterView adapterHeight)
+                        serverNetworkAdapters
+                    )
               ]
             , [ div [ class "nodes" ]
                     (List.map (nodeView state) serverNodes)
@@ -111,14 +123,15 @@ serverView state server =
         )
 
 
-networkAdapterView : NetworkAdapter -> Html Msg
-networkAdapterView adapter =
+networkAdapterView : Int -> NetworkAdapter -> Html Msg
+networkAdapterView adapterHeight adapter =
     div
         [ class "network-adapter"
         , attribute "data-network-adapter-id" (toString adapter.id)
         , title <|
             String.join " "
                 [ "Network adapter:", PhysicalAsset.fullModel adapter, adapter.name ]
+        , style [ ( "height", toString adapterHeight ++ "px" ) ]
         ]
         [ text "N" ]
 
