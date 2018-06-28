@@ -66,19 +66,22 @@ drawNetwork state network =
             -- XXX do better
             600
     in
-    drawNetworkAlongAxis xAxis network switches adaptersWithPorts
+    drawNetworkAlongAxis state xAxis network switches adaptersWithPorts
 
 
 drawNetworkAlongAxis :
-    Float
+    State
+    -> Float
     -> Network
     -> List NetworkSwitch
     -> List ( NetworkAdapter, NetworkAdapterPort )
     -> List (Svg msg)
-drawNetworkAlongAxis xAxis network switches adaptersWithPorts =
+drawNetworkAlongAxis state xAxis network switches adaptersWithPorts =
     let
         switchLines =
-            List.map (lineForAsset trunkLineWidth) switches
+            List.map
+                (startPointForAsset >> lineForAsset trunkLineWidth)
+                switches
                 |> Maybe.Extra.values
 
         adapterLines =
@@ -90,17 +93,15 @@ drawNetworkAlongAxis xAxis network switches adaptersWithPorts =
                 (\( a, p ) ->
                     Maybe.map
                         (\l -> ( a, p, l ))
-                        (lineForAsset regularLineWidth a)
+                        (lineForAsset regularLineWidth
+                            (State.adapterPortPosition state p)
+                        )
                 )
                 adaptersWithPorts
                 |> Maybe.Extra.values
 
-        lineForAsset : Int -> HasBoundingRect a -> Maybe Line
-        lineForAsset width assetWithRect =
-            let
-                start =
-                    startPointForAsset assetWithRect
-            in
+        lineForAsset : Int -> Maybe Point -> Maybe Line
+        lineForAsset width start =
             Maybe.map
                 (\s -> Line s (endPointFromStart s) width)
                 start
@@ -163,11 +164,11 @@ drawNetworkAlongAxis xAxis network switches adaptersWithPorts =
                 adapterLabel ( a, p, l ) =
                     let
                         labelPosition =
-                            { x = l.start.x - 80
+                            { x = l.start.x - 70
                             , y = l.start.y - 5
                             }
                     in
-                    drawLabel labelPosition p.interface ""
+                    drawLabel labelPosition p.interface "font-size: 12px;"
 
                 drawLine =
                     \lineRecord ->

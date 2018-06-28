@@ -1,4 +1,4 @@
-module Data.State exposing (State, decoder)
+module Data.State exposing (State, adapterPortPosition, decoder)
 
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.Group as Group exposing (Group)
@@ -11,8 +11,11 @@ import Data.Node as Node exposing (Node)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
 import Dict exposing (Dict)
+import Geometry.Point exposing (Point)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
+import List.Extra
+import Maybe.Extra
 
 
 type alias State =
@@ -52,3 +55,68 @@ assetDictDecoder assetDecoder =
             assetDecoder
         )
         |> D.map Dict.fromList
+
+
+adapterPortPosition : State -> NetworkAdapterPort -> Maybe Point
+adapterPortPosition state adapterPort =
+    let
+        adapter =
+            Dict.get adapterPort.networkAdapterId state.networkAdapters
+
+        interfaceOrderedPorts =
+            Maybe.map
+                (portsForAdapter state >> List.sortBy .interface)
+                adapter
+
+        interfaceOrderedConnections =
+            Maybe.map
+                (List.map (connectionForPort state) >> Maybe.Extra.values)
+                interfaceOrderedPorts
+
+        portConnection =
+            connectionForPort state adapterPort
+
+        adapterRect =
+            Maybe.map .boundingRect adapter
+                |> Maybe.Extra.join
+    in
+    case ( adapterRect, interfaceOrderedConnections, portConnection ) of
+        ( Just rect, Just connections, Just connection ) ->
+            let
+                connectionIndex =
+                    List.Extra.elemIndex connection connections
+            in
+            case connectionIndex of
+                Just index ->
+                    let
+                        portProportion =
+                            -- Want connections to be displayed evenly spaced
+                            -- along adapter's left hand side (and in
+                            -- alphanumeric order by their interface name), so
+                            -- find the proportion along the adapter's height
+                            -- we should display this connection.
+                            (toFloat index + 1)
+                                / (toFloat (List.length connections) + 1)
+
+                        portY =
+                            rect.top + (portProportion * rect.height)
+                    in
+                    Just <| Point rect.left portY
+
+                Nothing ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+portsForAdapter : State -> NetworkAdapter -> List NetworkAdapterPort
+portsForAdapter state adapter =
+    Dict.values state.networkAdapterPorts
+        |> List.filter (\p -> p.networkAdapterId == adapter.id)
+
+
+connectionForPort : State -> NetworkAdapterPort -> Maybe NetworkConnection
+connectionForPort state port_ =
+    Dict.values state.networkConnections
+        |> List.Extra.find (\c -> c.networkAdapterPortId == port_.id)
