@@ -4,6 +4,7 @@ module Data.State
         , adapterHeight
         , adapterPortPosition
         , decoder
+        , networksByName
         , xAxisForNetwork
         )
 
@@ -160,16 +161,13 @@ xAxisForNetwork state network =
                 |> Maybe.Extra.join
                 |> Maybe.map .left
 
-        networksByName =
-            Dict.values state.networks
-                |> List.sortBy .name
-                |> List.reverse
-
         networkSpacing =
             100
 
         networkIndex =
-            List.Extra.elemIndex network networksByName
+            networksByName state
+                |> List.reverse
+                |> List.Extra.elemIndex network
     in
     case ( firstSwitchX, networkIndex ) of
         ( Just switchX, Just index ) ->
@@ -185,3 +183,9 @@ xAxisForNetwork state network =
 
         _ ->
             Nothing
+
+
+networksByName : State -> List Network
+networksByName state =
+    Dict.values state.networks
+        |> List.sortBy .name

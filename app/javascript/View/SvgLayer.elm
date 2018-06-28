@@ -25,10 +25,19 @@ view state =
     -- XXX Consider using https://github.com/elm-community/typed-svg instead.
     svg
         [ class "svg-layer" ]
-        (Dict.values state.networks
-            |> List.map (drawNetwork state)
-            |> List.concat
-        )
+        (drawNetworks state)
+
+
+drawNetworks : State -> List (Svg msg)
+drawNetworks state =
+    -- Draw networks in name order, while network x-axis is determined in
+    -- reverse name order, so networks will appear in alphabetical order from
+    -- left to right, and with rightmost networks drawn over the lines of those
+    -- to the left; this gives a layout which looks good, or at least
+    -- consistent.
+    State.networksByName state
+        |> List.map (drawNetwork state)
+        |> List.concat
 
 
 drawNetwork : State -> Network -> List (Svg msg)
