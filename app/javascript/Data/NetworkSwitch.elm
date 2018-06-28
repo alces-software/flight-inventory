@@ -3,7 +3,6 @@ module Data.NetworkSwitch exposing (NetworkSwitch, decoder)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Geometry.BoundingRect as BoundingRect exposing (BoundingRect)
 import Json.Decode as D
-import Json.Decode.Pipeline as P
 
 
 type alias NetworkSwitch =

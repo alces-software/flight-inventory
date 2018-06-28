@@ -2,7 +2,6 @@ module Data.Group exposing (..)
 
 import Data.Asset as Asset exposing (Asset)
 import Json.Decode as D
-import Json.Decode.Pipeline as P
 
 
 type alias Group =

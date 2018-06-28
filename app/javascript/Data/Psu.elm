@@ -3,7 +3,6 @@ module Data.Psu exposing (..)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Server as Server
 import Json.Decode as D
-import Json.Decode.Pipeline as P
 
 
 type alias Psu =
