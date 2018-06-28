@@ -12,6 +12,7 @@ import Geometry.BoundingRect as BoundingRect
         , HasBoundingRect
         )
 import Geometry.Line as Line exposing (Line)
+import Geometry.Networks
 import Geometry.Point as Point exposing (Point)
 import Html exposing (Html)
 import List.Extra
@@ -71,7 +72,7 @@ drawNetwork state network =
                 |> List.map (toLinkedAssets state |> flip Dict.get)
                 |> Maybe.Extra.values
     in
-    case State.xAxisForNetwork state network of
+    case Geometry.Networks.xAxisForNetwork state network of
         Just xAxis ->
             drawNetworkAlongAxis state xAxis network switches adaptersWithPorts
 
@@ -104,7 +105,7 @@ drawNetworkAlongAxis state xAxis network switches adaptersWithPorts =
                     Maybe.map
                         (\l -> ( a, p, l ))
                         (lineForAsset regularLineWidth
-                            (State.adapterPortPosition state p)
+                            (Geometry.Networks.adapterPortPosition state p)
                         )
                 )
                 adaptersWithPorts

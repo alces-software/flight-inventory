@@ -9,6 +9,7 @@ import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
 import Data.State as State exposing (State)
 import Dict exposing (Dict)
+import Geometry.Networks
 import Hashbow
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -40,7 +41,7 @@ htmlLayer state =
             -- and gives the same value for every adapter; this is fine if we
             -- do it once here but is wasteful and noticeably slows things down
             -- if we do it for every adapter.
-            State.adapterHeight state
+            Geometry.Networks.adapterHeight state
     in
     -- XXX Fake rack for now
     div [ class "rack" ]
