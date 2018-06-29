@@ -69,9 +69,9 @@ drawNetwork state network =
                 |> List.map (toLinkedAssets state |> flip TaggedDict.get)
                 |> Maybe.Extra.values
     in
-    case Geometry.Networks.xAxisForNetwork state network of
-        Just xAxis ->
-            drawNetworkAlongAxis state xAxis network switches adaptersWithPorts
+    case Geometry.Networks.axisForNetwork state network of
+        Just axis ->
+            drawNetworkAlongAxis state axis network switches adaptersWithPorts
 
         Nothing ->
             []
@@ -84,7 +84,7 @@ drawNetworkAlongAxis :
     -> List NetworkSwitch
     -> List ( NetworkAdapter, NetworkAdapterPort )
     -> List (Svg msg)
-drawNetworkAlongAxis state xAxis network switches adaptersWithPorts =
+drawNetworkAlongAxis state axis network switches adaptersWithPorts =
     let
         switchLines =
             List.map
@@ -117,7 +117,7 @@ drawNetworkAlongAxis state xAxis network switches adaptersWithPorts =
                 start
 
         endPointFromStart =
-            \start -> { x = xAxis, y = start.y }
+            \start -> { x = axis, y = start.y }
 
         horizontalLines =
             List.concat [ switchLines, adapterLines ]

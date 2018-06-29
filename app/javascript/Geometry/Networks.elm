@@ -2,9 +2,9 @@ module Geometry.Networks
     exposing
         ( adapterHeight
         , adapterPortPosition
+        , axisForNetwork
         , switchConnectionPosition
         , switchHeight
-        , xAxisForNetwork
         )
 
 import Data.Network as Network exposing (Network)
@@ -108,8 +108,8 @@ switchConnectionPosition state network switch =
         |> Maybe.Extra.join
 
 
-xAxisForNetwork : State -> Network -> Maybe Float
-xAxisForNetwork state network =
+axisForNetwork : State -> Network -> Maybe Float
+axisForNetwork state network =
     let
         firstSwitchX =
             TaggedDict.values state.networkSwitches
@@ -129,14 +129,14 @@ xAxisForNetwork state network =
     case ( firstSwitchX, networkIndex ) of
         ( Just switchX, Just index ) ->
             let
-                xAxisOffset =
+                axisOffset =
                     -- Add 2 to index so rightmost network axis is offset from
                     -- switches and adapters by twice usual offset; looks
                     -- slightly nicer with some space between rack edge and
                     -- network axes.
                     ((index + 2) * networkSpacing) |> toFloat
             in
-            Just <| switchX - xAxisOffset
+            Just <| switchX - axisOffset
 
         _ ->
             Nothing
