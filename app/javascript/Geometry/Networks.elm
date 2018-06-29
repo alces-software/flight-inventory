@@ -11,11 +11,11 @@ import Data.Network as Network exposing (Network)
 import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.State as State exposing (State)
-import Dict
 import Geometry.BoundingRect as BoundingRect
 import Geometry.Point exposing (Point)
 import List.Extra
 import Maybe.Extra
+import Tagged.Dict as TaggedDict
 
 
 adapterHeight : State -> Int
@@ -27,14 +27,14 @@ adapterHeight state =
                 >> Maybe.Extra.values
     in
     connectedRectHeight
-        (Dict.values state.networkAdapters)
+        (TaggedDict.values state.networkAdapters)
         connectionsForAdapter
 
 
 switchHeight : State -> Int
 switchHeight state =
     connectedRectHeight
-        (Dict.values state.networkSwitches)
+        (TaggedDict.values state.networkSwitches)
         (State.networksConnectedToSwitch state)
 
 
@@ -67,7 +67,7 @@ adapterPortPosition : State -> NetworkAdapterPort -> Maybe Point
 adapterPortPosition state adapterPort =
     let
         adapter =
-            Dict.get adapterPort.networkAdapterId state.networkAdapters
+            TaggedDict.get adapterPort.networkAdapterId state.networkAdapters
 
         interfaceOrderedPorts =
             Maybe.map
@@ -112,7 +112,7 @@ xAxisForNetwork : State -> Network -> Maybe Float
 xAxisForNetwork state network =
     let
         firstSwitchX =
-            Dict.values state.networkSwitches
+            TaggedDict.values state.networkSwitches
                 |> List.head
                 |> Maybe.map .boundingRect
                 |> Maybe.Extra.join

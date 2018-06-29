@@ -1,7 +1,7 @@
 module Update exposing (updateState)
 
+import Data.Asset as Asset
 import Data.State as State exposing (State)
-import Dict exposing (Dict)
 import Geometry.BoundingRect as BoundingRect
     exposing
         ( BoundingRect
@@ -11,10 +11,11 @@ import Json.Decode as D
 import Json.Encode as E
 import Maybe.Extra
 import Msg exposing (Msg(..))
+import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
-type alias WithBoundingRects a =
-    Dict Int (HasBoundingRect a)
+type alias WithBoundingRects idTag a =
+    TaggedDict idTag Int (HasBoundingRect a)
 
 
 updateState : Msg -> State -> ( State, Cmd Msg )
@@ -48,7 +49,10 @@ handlePortData state dataTag data =
             state
 
 
-handlePositionsMessage : WithBoundingRects a -> E.Value -> WithBoundingRects a
+handlePositionsMessage :
+    WithBoundingRects idTag a
+    -> E.Value
+    -> WithBoundingRects idTag a
 handlePositionsMessage currentAssets data =
     let
         decodedData =
@@ -67,17 +71,20 @@ handlePositionsMessage currentAssets data =
             currentAssets
 
 
-positionsDecoder : D.Decoder (List ( Int, BoundingRect ))
+positionsDecoder : D.Decoder (List ( Asset.Id idTag, BoundingRect ))
 positionsDecoder =
     D.list
         (D.map2
             (,)
-            (D.index 0 D.int)
+            (D.index 0 Asset.idDecoder)
             (D.index 1 BoundingRect.decoder)
         )
 
 
-updateAssetBoundingRects : WithBoundingRects a -> List ( Int, BoundingRect ) -> WithBoundingRects a
+updateAssetBoundingRects :
+    WithBoundingRects idTag a
+    -> List ( Asset.Id idTag, BoundingRect )
+    -> WithBoundingRects idTag a
 updateAssetBoundingRects currentAssets assetIdsToNewRects =
     let
         assetsWithNewRects =
@@ -89,7 +96,7 @@ updateAssetBoundingRects currentAssets assetIdsToNewRects =
                 (\( assetId, rect ) ->
                     let
                         currentAsset =
-                            Dict.get assetId currentAssets
+                            TaggedDict.get assetId currentAssets
                     in
                     Maybe.map
                         (\asset ->
@@ -99,8 +106,8 @@ updateAssetBoundingRects currentAssets assetIdsToNewRects =
                 )
                 assetIdsToNewRects
                 |> Maybe.Extra.values
-                |> Dict.fromList
+                |> TaggedDict.fromList
     in
-    Dict.intersect
+    TaggedDict.intersect
         assetsWithNewRects
         currentAssets

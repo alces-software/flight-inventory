@@ -1,5 +1,6 @@
 module View.SvgLayer exposing (view)
 
+import Data.Asset as Asset
 import Data.Network as Network exposing (Network)
 import Data.NetworkAdapter as NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
@@ -14,6 +15,8 @@ import List.Extra
 import Maybe.Extra
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Tagged
+import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
 view : State -> Html msg
@@ -55,16 +58,18 @@ drawNetwork state network =
                 (\p ->
                     Maybe.map
                         (\adapter -> ( adapter, p ))
-                        (Dict.get p.networkAdapterId state.networkAdapters)
+                        (TaggedDict.get p.networkAdapterId state.networkAdapters)
                 )
                 ports
                 |> Maybe.Extra.values
 
-        linkedAssets : List a -> (a -> Int) -> (State -> Dict Int b) -> List b
+        linkedAssets : List a -> (a -> Asset.Id idTag) -> (State -> TaggedDict idTag Int b) -> List b
         linkedAssets assets toLinkedAssetId toLinkedAssets =
             List.map toLinkedAssetId assets
+                |> List.map Tagged.untag
                 |> List.Extra.unique
-                |> List.map (toLinkedAssets state |> flip Dict.get)
+                |> List.map Tagged.tag
+                |> List.map (toLinkedAssets state |> flip TaggedDict.get)
                 |> Maybe.Extra.values
     in
     case Geometry.Networks.xAxisForNetwork state network of

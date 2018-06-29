@@ -14,7 +14,7 @@ module Data.State
         , switchesByName
         )
 
-import Data.Asset exposing (Asset)
+import Data.Asset as Asset exposing (Asset)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.Group as Group exposing (Group)
 import Data.Network as Network exposing (Network)
@@ -30,35 +30,39 @@ import Json.Decode as D
 import Json.Decode.Pipeline as P
 import List.Extra
 import Maybe.Extra
+import Tagged
+import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
 type alias State =
-    { chassis : Dict Int Chassis
-    , servers : Dict Int Server
-    , psus : Dict Int Psu
-    , networkAdapters : Dict Int NetworkAdapter
-    , networkAdapterPorts : Dict Int NetworkAdapterPort
+    { chassis : TaggedDict Chassis.IdTag Int Chassis
+    , servers : TaggedDict Server.IdTag Int Server
+    , psus : TaggedDict Psu.IdTag Int Psu
+    , networkAdapters : TaggedDict NetworkAdapter.IdTag Int NetworkAdapter
+    , networkAdapterPorts : TaggedDict NetworkAdapterPort.IdTag Int NetworkAdapterPort
+
+    -- XXX Use (Tagged) Set for NetworkConnections, don't care about IDs?
     , networkConnections : Dict Int NetworkConnection
-    , networks : Dict Int Network
-    , networkSwitches : Dict Int NetworkSwitch
-    , nodes : Dict Int Node
-    , groups : Dict Int Group
+    , networks : TaggedDict Network.IdTag Int Network
+    , networkSwitches : TaggedDict NetworkSwitch.IdTag Int NetworkSwitch
+    , nodes : TaggedDict Node.IdTag Int Node
+    , groups : TaggedDict Group.IdTag Int Group
     }
 
 
 decoder : D.Decoder State
 decoder =
     P.decode State
-        |> P.required "chassis" (assetDictDecoder Chassis.decoder)
-        |> P.required "servers" (assetDictDecoder Server.decoder)
-        |> P.required "psus" (assetDictDecoder Psu.decoder)
-        |> P.required "networkAdapters" (assetDictDecoder NetworkAdapter.decoder)
-        |> P.required "networkAdapterPorts" (assetDictDecoder NetworkAdapterPort.decoder)
+        |> P.required "chassis" (taggedAssetDictDecoder Chassis.decoder)
+        |> P.required "servers" (taggedAssetDictDecoder Server.decoder)
+        |> P.required "psus" (taggedAssetDictDecoder Psu.decoder)
+        |> P.required "networkAdapters" (taggedAssetDictDecoder NetworkAdapter.decoder)
+        |> P.required "networkAdapterPorts" (taggedAssetDictDecoder NetworkAdapterPort.decoder)
         |> P.required "networkConnections" (assetDictDecoder NetworkConnection.decoder)
-        |> P.required "networks" (assetDictDecoder Network.decoder)
-        |> P.required "networkSwitches" (assetDictDecoder NetworkSwitch.decoder)
-        |> P.required "nodes" (assetDictDecoder Node.decoder)
-        |> P.required "groups" (assetDictDecoder Group.decoder)
+        |> P.required "networks" (taggedAssetDictDecoder Network.decoder)
+        |> P.required "networkSwitches" (taggedAssetDictDecoder NetworkSwitch.decoder)
+        |> P.required "nodes" (taggedAssetDictDecoder Node.decoder)
+        |> P.required "groups" (taggedAssetDictDecoder Group.decoder)
 
 
 assetDictDecoder : D.Decoder asset -> D.Decoder (Dict Int asset)
@@ -71,9 +75,19 @@ assetDictDecoder assetDecoder =
         |> D.map Dict.fromList
 
 
+taggedAssetDictDecoder : D.Decoder asset -> D.Decoder (TaggedDict idTag Int asset)
+taggedAssetDictDecoder assetDecoder =
+    D.list
+        (D.map2 (,)
+            (D.field "id" Asset.idDecoder)
+            assetDecoder
+        )
+        |> D.map TaggedDict.fromList
+
+
 portsForAdapter : State -> NetworkAdapter -> List NetworkAdapterPort
 portsForAdapter state adapter =
-    Dict.values state.networkAdapterPorts
+    TaggedDict.values state.networkAdapterPorts
         |> List.filter (\p -> p.networkAdapterId == adapter.id)
 
 
@@ -100,7 +114,7 @@ networksByName state =
 
 chassisServersByName : State -> Chassis -> List Server
 chassisServersByName state chassis =
-    Dict.filter
+    TaggedDict.filter
         (\_ server -> server.chassisId == chassis.id)
         state.servers
         |> nameOrderedValues
@@ -108,7 +122,7 @@ chassisServersByName state chassis =
 
 chassisPsusByName : State -> Chassis -> List Psu
 chassisPsusByName state chassis =
-    Dict.filter
+    TaggedDict.filter
         (\_ psu -> psu.chassisId == chassis.id)
         state.psus
         |> nameOrderedValues
@@ -116,7 +130,7 @@ chassisPsusByName state chassis =
 
 serverNetworkAdaptersByName : State -> Server -> List NetworkAdapter
 serverNetworkAdaptersByName state server =
-    Dict.filter
+    TaggedDict.filter
         (\_ adapter -> adapter.serverId == server.id)
         state.networkAdapters
         |> nameOrderedValues
@@ -124,15 +138,15 @@ serverNetworkAdaptersByName state server =
 
 serverNodesByName : State -> Server -> List Node
 serverNodesByName state server =
-    Dict.filter
+    TaggedDict.filter
         (\_ node -> node.serverId == server.id)
         state.nodes
         |> nameOrderedValues
 
 
-nameOrderedValues : Dict comparable (Asset b) -> List (Asset b)
+nameOrderedValues : TaggedDict idTag comparable (Asset idTag a) -> List (Asset idTag a)
 nameOrderedValues dict =
-    Dict.values dict |> List.sortBy .name
+    TaggedDict.values dict |> List.sortBy .name
 
 
 networksConnectedToSwitch : State -> NetworkSwitch -> List Network
@@ -140,6 +154,7 @@ networksConnectedToSwitch state switch =
     Dict.values state.networkConnections
         |> List.filter (.networkSwitchId >> (==) switch.id)
         |> List.map .networkId
+        |> List.map Tagged.untag
         |> List.Extra.unique
-        |> List.map (flip Dict.get state.networks)
+        |> List.map (Tagged.tag >> flip TaggedDict.get state.networks)
         |> Maybe.Extra.values

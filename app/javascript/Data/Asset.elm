@@ -2,24 +2,34 @@ module Data.Asset exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline as P
+import Tagged exposing (Tagged)
 
 
-type alias Asset a =
+type alias Asset idTag a =
     { a
-        | id : Int
+        | id : Tagged idTag Int
         , name : String
     }
 
 
-decoder : (Int -> String -> a) -> D.Decoder a
+type alias Id idTag =
+    Tagged idTag Int
+
+
+decoder : (Id idTag -> String -> a) -> D.Decoder a
 decoder constructor =
     P.decode constructor
-        |> P.required "id" D.int
+        |> P.required "id" idDecoder
         |> P.required "name" D.string
 
 
-create : Int -> String -> Asset {}
+create : Id idTag -> String -> Asset idTag {}
 create id name =
     { id = id
     , name = name
     }
+
+
+idDecoder : D.Decoder (Id idTag)
+idDecoder =
+    D.map Tagged.tag D.int

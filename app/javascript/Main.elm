@@ -10,8 +10,6 @@ import View
 
 
 -- MODEL
--- XXX Use stricter types for IDs in all types, e.g. using
--- http://package.elm-lang.org/packages/joneshf/elm-tagged/latest.
 
 
 type Model

@@ -5,7 +5,15 @@ import Json.Decode as D
 
 
 type alias Group =
-    Asset {}
+    Asset IdTag {}
+
+
+type alias Id =
+    Asset.Id IdTag
+
+
+type IdTag
+    = IdTag
 
 
 decoder : D.Decoder Group

@@ -1,5 +1,6 @@
 module View exposing (viewState)
 
+import Data.Asset exposing (Asset)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
@@ -8,12 +9,13 @@ import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
 import Data.State as State exposing (State)
-import Dict exposing (Dict)
 import Geometry.Networks
 import Hashbow
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Msg exposing (Msg(..))
+import Tagged
+import Tagged.Dict as TaggedDict exposing (TaggedDict)
 import View.SvgLayer as SvgLayer
 
 
@@ -60,7 +62,7 @@ switchView : Int -> NetworkSwitch -> Html Msg
 switchView switchHeight switch =
     div
         [ class "network-switch"
-        , attribute "data-network-switch-id" (toString switch.id)
+        , idAttribute "data-network-switch-id" switch
         , title ("Network switch: " ++ switch.name)
         , style [ ( "height", toString switchHeight ++ "px" ) ]
         ]
@@ -114,7 +116,7 @@ networkAdapterView : Int -> NetworkAdapter -> Html Msg
 networkAdapterView adapterHeight adapter =
     div
         [ class "network-adapter"
-        , attribute "data-network-adapter-id" (toString adapter.id)
+        , idAttribute "data-network-adapter-id" adapter
         , title <|
             String.join " "
                 [ "Network adapter:", PhysicalAsset.fullModel adapter, adapter.name ]
@@ -127,7 +129,7 @@ nodeView : State -> Node -> Html Msg
 nodeView state node =
     let
         nodeGroup =
-            Dict.get node.groupId state.groups
+            TaggedDict.get node.groupId state.groups
     in
     case nodeGroup of
         Just group ->
@@ -159,6 +161,13 @@ psuView : Psu -> Html Msg
 psuView psu =
     div [ class "psu", title <| "PSU: " ++ psu.name ]
         [ text (PhysicalAsset.fullModel psu ++ " PSU") ]
+
+
+idAttribute : String -> Asset idTag a -> Html.Attribute msg
+idAttribute dataAttr { id } =
+    Tagged.untag id
+        |> toString
+        |> attribute dataAttr
 
 
 assetTitle : String -> Html msg
