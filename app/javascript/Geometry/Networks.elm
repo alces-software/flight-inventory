@@ -21,41 +21,46 @@ import Maybe.Extra
 adapterHeight : State -> Int
 adapterHeight state =
     let
-        maxAdapterConnections =
-            Dict.values state.networkAdapters
-                |> List.map numberConnectionsForAdapter
-                |> List.maximum
-                |> Maybe.withDefault 0
-
-        numberConnectionsForAdapter =
+        connectionsForAdapter =
             State.portsForAdapter state
                 >> List.map (State.connectionForPort state)
                 >> Maybe.Extra.values
-                >> List.length
     in
-    maxAdapterConnections * pixelsPerConnection
+    connectedRectHeight
+        (Dict.values state.networkAdapters)
+        connectionsForAdapter
 
 
 switchHeight : State -> Int
 switchHeight state =
-    -- XXX DRY up with above?
+    connectedRectHeight
+        (Dict.values state.networkSwitches)
+        (State.networksConnectedToSwitch state)
+
+
+{-|
+
+    Return the height each rectangle to have connections drawn from it should
+    be, in order for all such rectangles to have the same height and the
+    rectangle with most connections to have sufficient space to clearly and
+    neatly draw all of these.
+
+-}
+connectedRectHeight : List connected -> (connected -> List connections) -> Int
+connectedRectHeight allConnected connectionsFor =
     let
-        maxNetworkConnections =
-            Dict.values state.networkSwitches
-                |> List.map numberConnectionsForSwitch
+        maxConnections =
+            List.map numberConnectionsFor allConnected
                 |> List.maximum
                 |> Maybe.withDefault 0
 
-        numberConnectionsForSwitch =
-            State.networksConnectedToSwitch state
-                >> List.length
+        numberConnectionsFor =
+            connectionsFor >> List.length
+
+        pixelsPerConnection =
+            20
     in
-    maxNetworkConnections * pixelsPerConnection
-
-
-pixelsPerConnection : Int
-pixelsPerConnection =
-    20
+    maxConnections * pixelsPerConnection
 
 
 adapterPortPosition : State -> NetworkAdapterPort -> Maybe Point
