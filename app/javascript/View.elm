@@ -28,12 +28,6 @@ viewState state =
 htmlLayer : State -> Html Msg
 htmlLayer state =
     let
-        switches =
-            Dict.values state.networkSwitches
-
-        chassis =
-            Dict.values state.chassis
-
         adapterHeight =
             -- Calculate the height we should display NetworkAdapters at here
             -- and thread this through, rather than at point of use, as the
@@ -52,8 +46,12 @@ htmlLayer state =
     div [ class "rack" ]
         (List.concat
             [ [ assetTitle "Rack" ]
-            , List.map (switchView switchHeight) switches
-            , List.map (chassisView adapterHeight state) chassis
+            , List.map
+                (switchView switchHeight)
+                (State.switchesByName state)
+            , List.map
+                (chassisView adapterHeight state)
+                (State.chassisByName state)
             ]
         )
 
@@ -72,28 +70,20 @@ switchView switchHeight switch =
 
 chassisView : Int -> State -> Chassis -> Html Msg
 chassisView adapterHeight state chassis =
-    let
-        chassisServers =
-            Dict.values <|
-                Dict.filter
-                    (\serverId server -> server.chassisId == chassis.id)
-                    state.servers
-
-        chassisPsus =
-            Dict.values <|
-                Dict.filter
-                    (\psuId psu -> psu.chassisId == chassis.id)
-                    state.psus
-    in
     div [ class "chassis", title ("Chassis: " ++ chassis.name) ]
         (List.concat
             [ [ assetTitle <| (PhysicalAsset.fullModel chassis ++ " chassis") ]
             , [ div
                     [ class "servers" ]
-                    (List.map (serverView adapterHeight state) chassisServers)
+                    (List.map (serverView adapterHeight state)
+                        (State.chassisServersByName state chassis)
+                    )
               ]
             , [ div [ class "psus" ]
-                    (List.map psuView chassisPsus)
+                    (List.map
+                        psuView
+                        (State.chassisPsusByName state chassis)
+                    )
               ]
             ]
         )
@@ -101,30 +91,20 @@ chassisView adapterHeight state chassis =
 
 serverView : Int -> State -> Server -> Html Msg
 serverView adapterHeight state server =
-    let
-        serverNetworkAdapters =
-            Dict.values <|
-                Dict.filter
-                    (\adapterId adapter -> adapter.serverId == server.id)
-                    state.networkAdapters
-
-        serverNodes =
-            Dict.values <|
-                Dict.filter
-                    (\nodeId node -> node.serverId == server.id)
-                    state.nodes
-    in
     div [ class "server", title ("Server: " ++ server.name) ]
         (List.concat
             [ [ assetTitle <| (PhysicalAsset.fullModel server ++ " server") ]
             , [ div [ class "network-adapters" ]
                     (List.map
                         (networkAdapterView adapterHeight)
-                        serverNetworkAdapters
+                        (State.serverNetworkAdaptersByName state server)
                     )
               ]
             , [ div [ class "nodes" ]
-                    (List.map (nodeView state) serverNodes)
+                    (List.map
+                        (nodeView state)
+                        (State.serverNodesByName state server)
+                    )
               ]
             ]
         )

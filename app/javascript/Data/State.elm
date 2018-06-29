@@ -1,13 +1,20 @@
 module Data.State
     exposing
         ( State
+        , chassisByName
+        , chassisPsusByName
+        , chassisServersByName
         , connectionForPort
         , decoder
         , networksByName
         , networksConnectedToSwitch
         , portsForAdapter
+        , serverNetworkAdaptersByName
+        , serverNodesByName
+        , switchesByName
         )
 
+import Data.Asset exposing (Asset)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.Group as Group exposing (Group)
 import Data.Network as Network exposing (Network)
@@ -76,10 +83,56 @@ connectionForPort state port_ =
         |> List.Extra.find (\c -> c.networkAdapterPortId == port_.id)
 
 
+chassisByName : State -> List Chassis
+chassisByName state =
+    nameOrderedValues state.chassis
+
+
+switchesByName : State -> List NetworkSwitch
+switchesByName state =
+    nameOrderedValues state.networkSwitches
+
+
 networksByName : State -> List Network
 networksByName state =
-    Dict.values state.networks
-        |> List.sortBy .name
+    nameOrderedValues state.networks
+
+
+chassisServersByName : State -> Chassis -> List Server
+chassisServersByName state chassis =
+    Dict.filter
+        (\_ server -> server.chassisId == chassis.id)
+        state.servers
+        |> nameOrderedValues
+
+
+chassisPsusByName : State -> Chassis -> List Psu
+chassisPsusByName state chassis =
+    Dict.filter
+        (\_ psu -> psu.chassisId == chassis.id)
+        state.psus
+        |> nameOrderedValues
+
+
+serverNetworkAdaptersByName : State -> Server -> List NetworkAdapter
+serverNetworkAdaptersByName state server =
+    Dict.filter
+        (\_ adapter -> adapter.serverId == server.id)
+        state.networkAdapters
+        |> nameOrderedValues
+
+
+serverNodesByName : State -> Server -> List Node
+serverNodesByName state server =
+    Dict.filter
+        (\_ node -> node.serverId == server.id)
+        state.nodes
+        |> nameOrderedValues
+
+
+nameOrderedValues : Dict comparable (Asset b) -> List (Asset b)
+nameOrderedValues dict =
+    Dict.values dict |> List.sortBy .name
 
 
 networksConnectedToSwitch : State -> NetworkSwitch -> List Network
