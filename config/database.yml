@@ -81,6 +81,4 @@ test:
 #
 production:
   <<: *default
-  database: flight-inventory_production
-  username: flight-inventory
-  password: <%= ENV['FLIGHT-INVENTORY_DATABASE_PASSWORD'] %>
+  url: <%= ENV['DATABASE_URL'] %>
