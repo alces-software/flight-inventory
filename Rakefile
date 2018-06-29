@@ -3,4 +3,7 @@
 
 require_relative 'config/application'
 
+# Always show error stack traces.
+Rake.application.options.backtrace = true
+
 Rails.application.load_tasks
