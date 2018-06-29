@@ -16,8 +16,10 @@ class Import
   def run
     # XXX Reset everything on each run for now; `pkill` the server process
     # first so (hopefully) no open database connections which would cause
-    # `rails db:reset` to fail.
-    sh 'pkill --full "puma .*flight-inventory"'
+    # `rails db:reset` to fail (use backticks rather than `sh` for this as if
+    # this command fails presumably the server is not already running, which is
+    # fine).
+    `pkill --full "puma .*flight-inventory"`
     sh 'rails db:reset'
 
     # Physical assets.
