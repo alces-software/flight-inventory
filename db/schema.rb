@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_25_165457) do
+ActiveRecord::Schema.define(version: 2018_06_29_173110) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -82,6 +82,7 @@ ActiveRecord::Schema.define(version: 2018_06_25_165457) do
     t.string "cable_colour", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "data", null: false
   end
 
   create_table "nodes", force: :cascade do |t|

@@ -44,11 +44,9 @@ class Import
   end
 
   def import_networks
-    # XXX Import networks without using `import_assets_of_type`, since these
-    # are superficially similar but also simpler/different (networks do not
-    # seem to have arbitrary other data associated with them, so don't need
-    # `data` field, but we do want to ensure we always extract the required
-    # `cable_colour` field).
+    # XXX Import networks without using `import_assets_of_type` for now as we
+    # want to ensure we always extract the required `cable_colour` field, which
+    # this does not currently support.
     STDERR.puts 'Importing networks'
 
     networks_data = metal_view('assets.networks')
@@ -58,7 +56,7 @@ class Import
       name = asset_name(data)
       STDERR.puts "Importing network #{name}"
       cable_colour = data.fetch('cable_colour')
-      Network.create!(name: name, cable_colour: cable_colour)
+      Network.create!(name: name, data: data, cable_colour: cable_colour)
     end
   end
 
