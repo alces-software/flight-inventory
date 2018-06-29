@@ -6,11 +6,6 @@ import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPor
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.State as State exposing (State)
 import Dict exposing (Dict)
-import Geometry.BoundingRect as BoundingRect
-    exposing
-        ( BoundingRect
-        , HasBoundingRect
-        )
 import Geometry.Line as Line exposing (Line)
 import Geometry.Networks
 import Geometry.Point as Point exposing (Point)
@@ -91,7 +86,9 @@ drawNetworkAlongAxis state xAxis network switches adaptersWithPorts =
     let
         switchLines =
             List.map
-                (startPointForAsset >> lineForAsset trunkLineWidth)
+                (Geometry.Networks.switchConnectionPosition state network
+                    >> lineForAsset trunkLineWidth
+                )
                 switches
                 |> Maybe.Extra.values
 
@@ -116,10 +113,6 @@ drawNetworkAlongAxis state xAxis network switches adaptersWithPorts =
             Maybe.map
                 (\s -> Line s (endPointFromStart s) width)
                 start
-
-        startPointForAsset : HasBoundingRect a -> Maybe Point
-        startPointForAsset =
-            .boundingRect >> Maybe.map BoundingRect.leftMiddlePoint
 
         endPointFromStart =
             \start -> { x = xAxis, y = start.y }
