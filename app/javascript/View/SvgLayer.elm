@@ -15,7 +15,6 @@ import List.Extra
 import Maybe.Extra
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import Tagged
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
@@ -66,9 +65,7 @@ drawNetwork state network =
         linkedAssets : List a -> (a -> Asset.Id idTag) -> (State -> TaggedDict idTag Int b) -> List b
         linkedAssets assets toLinkedAssetId toLinkedAssets =
             List.map toLinkedAssetId assets
-                |> List.map Tagged.untag
-                |> List.Extra.unique
-                |> List.map Tagged.tag
+                |> Asset.uniqueIds
                 |> List.map (toLinkedAssets state |> flip TaggedDict.get)
                 |> Maybe.Extra.values
     in

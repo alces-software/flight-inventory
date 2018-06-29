@@ -2,6 +2,7 @@ module Data.Asset exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline as P
+import List.Extra
 import Tagged exposing (Tagged)
 
 
@@ -33,3 +34,10 @@ create id name =
 idDecoder : D.Decoder (Id idTag)
 idDecoder =
     D.map Tagged.tag D.int
+
+
+uniqueIds : List (Id idTag) -> List (Id idTag)
+uniqueIds =
+    List.map Tagged.untag
+        >> List.Extra.unique
+        >> List.map Tagged.tag

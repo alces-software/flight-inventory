@@ -30,7 +30,6 @@ import Json.Decode as D
 import Json.Decode.Pipeline as P
 import List.Extra
 import Maybe.Extra
-import Tagged
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
@@ -154,7 +153,6 @@ networksConnectedToSwitch state switch =
     Dict.values state.networkConnections
         |> List.filter (.networkSwitchId >> (==) switch.id)
         |> List.map .networkId
-        |> List.map Tagged.untag
-        |> List.Extra.unique
-        |> List.map (Tagged.tag >> flip TaggedDict.get state.networks)
+        |> Asset.uniqueIds
+        |> List.map (flip TaggedDict.get state.networks)
         |> Maybe.Extra.values
