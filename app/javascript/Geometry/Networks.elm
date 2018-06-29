@@ -12,6 +12,7 @@ import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPor
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.State as State exposing (State)
 import Dict
+import Geometry.BoundingRect as BoundingRect
 import Geometry.Point exposing (Point)
 import List.Extra
 import Maybe.Extra
@@ -80,31 +81,9 @@ adapterPortPosition state adapterPort =
             Maybe.map .boundingRect adapter
                 |> Maybe.Extra.join
     in
-    case ( adapterRect, interfaceOrderedConnections, portConnection ) of
-        ( Just rect, Just connections, Just connection ) ->
-            let
-                connectionIndex =
-                    List.Extra.elemIndex connection connections
-            in
-            case connectionIndex of
-                Just index ->
-                    let
-                        portProportion =
-                            -- Want connections to be displayed evenly spaced
-                            -- along adapter's left hand side (and in
-                            -- alphanumeric order by their interface name), so
-                            -- find the proportion along the adapter's height
-                            -- we should display this connection.
-                            (toFloat index + 1)
-                                / (toFloat (List.length connections) + 1)
-
-                        portY =
-                            rect.top + (portProportion * rect.height)
-                    in
-                    Just <| Point rect.left portY
-
-                Nothing ->
-                    Nothing
+    case ( portConnection, interfaceOrderedConnections, adapterRect ) of
+        ( Just connection, Just connections, Just rect ) ->
+            BoundingRect.connectionPoint connection connections rect
 
         _ ->
             Nothing
@@ -116,36 +95,12 @@ switchConnectionPosition state network switch =
         nameOrderedConnectedNetworks =
             State.networksConnectedToSwitch state switch
                 |> List.sortBy .name
+
+        connectionPoint =
+            BoundingRect.connectionPoint network nameOrderedConnectedNetworks
     in
-    case switch.boundingRect of
-        -- XXX Tidy and DRY up this function with above
-        Just rect ->
-            let
-                connectionIndex =
-                    List.Extra.elemIndex network nameOrderedConnectedNetworks
-            in
-            case connectionIndex of
-                Just index ->
-                    let
-                        portProportion =
-                            -- Want connections to be displayed evenly spaced
-                            -- along switch's left hand side (and in
-                            -- alphanumeric order by their network name), so
-                            -- find the proportion along the adapter's height
-                            -- we should display this connection.
-                            (toFloat index + 1)
-                                / (toFloat (List.length nameOrderedConnectedNetworks) + 1)
-
-                        portY =
-                            rect.top + (portProportion * rect.height)
-                    in
-                    Just <| Point rect.left portY
-
-                Nothing ->
-                    Nothing
-
-        _ ->
-            Nothing
+    Maybe.map connectionPoint switch.boundingRect
+        |> Maybe.Extra.join
 
 
 xAxisForNetwork : State -> Network -> Maybe Float
