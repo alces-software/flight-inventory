@@ -10,6 +10,11 @@ $flight-app-bar-blue: #2794d8;
   top: 0;
 }
 
+@mixin asset-box-edge {
+  padding: 5px;
+  border: 1px solid black;
+}
+
 #root {
   @include cover;
   position: absolute;
@@ -26,16 +31,31 @@ $flight-app-bar-blue: #2794d8;
 }
 
 .html-layer {
+  $app-margin: 20px;
+
   display: grid;
   // Middle column provides space for SVG network diagrams.
   // XXX Consider making this more dynamic - if there's too many networks they
   // could still overlap the first column atm.
   grid-template-columns: 30% 20% 50%;
-  margin: 20px;
+  margin: $app-margin;
 
   .selected-asset-inspector {
+    @include asset-box-edge;
+
     grid-column-start: 1;
-    position: fixed;
+
+    // Use sticky position (see
+    // https://css-tricks.com/almanac/properties/p/position/#article-header-id-5)
+    // with same top as app margin, so element functions the same as if it had
+    // `position: fixed` but can define its width and height in terms of
+    // parent.
+    position: sticky;
+    top: $app-margin;
+
+    width: 100%;
+    height: 75vh;
+    overflow: scroll;
   }
 
   .cluster-diagram {
@@ -51,8 +71,8 @@ $flight-app-bar-blue: #2794d8;
 }
 
 @mixin asset {
-  border: 1px solid black;
-  padding: 5px;
+  @include asset-box-edge;
+
   position: relative;
 
   .asset-hit-box {
