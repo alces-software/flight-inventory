@@ -29,10 +29,11 @@ decoder =
         |> P.required "group_id" Asset.idDecoder
 
 
-create : Id -> String -> Server.Id -> Group.Id -> Node
-create id name serverId groupId =
+create : Id -> String -> D.Value -> Server.Id -> Group.Id -> Node
+create id name data serverId groupId =
     { id = id
     , name = name
+    , data = data
     , serverId = serverId
     , groupId = groupId
     }

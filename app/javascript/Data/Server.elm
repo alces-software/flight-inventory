@@ -27,10 +27,11 @@ decoder =
         |> P.required "chassis_id" Asset.idDecoder
 
 
-create : Id -> String -> String -> String -> Chassis.Id -> Server
-create id name manufacturer model chassisId =
+create : Id -> String -> D.Value -> String -> String -> Chassis.Id -> Server
+create id name data manufacturer model chassisId =
     { id = id
     , name = name
+    , data = data
     , manufacturer = manufacturer
     , model = model
     , chassisId = chassisId

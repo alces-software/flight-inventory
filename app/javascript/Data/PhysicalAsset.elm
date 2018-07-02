@@ -13,21 +13,30 @@ type alias PhysicalAsset idTag a =
         }
 
 
-decoder : (Asset.Id idTag -> String -> String -> String -> a) -> D.Decoder a
+decoder :
+    (Asset.Id idTag -> String -> D.Value -> String -> String -> a)
+    -> D.Decoder a
 decoder constructor =
     Asset.decoder constructor
         |> P.requiredAt [ "data", "manufacturer" ] D.string
         |> P.requiredAt [ "data", "model" ] D.string
 
 
-create : Asset.Id idTag -> String -> String -> String -> PhysicalAsset idTag {}
-create id name manufacturer model =
+create :
+    Asset.Id idTag
+    -> String
+    -> D.Value
+    -> String
+    -> String
+    -> PhysicalAsset idTag {}
+create id name data manufacturer model =
     -- Note: Have to define own constructor function here, and in similar
     -- places below, as extensible records do not currently define their own
     -- constructor with their alias name (see
     -- https://stackoverflow.com/a/47876225/2620402).
     { id = id
     , name = name
+    , data = data
     , manufacturer = manufacturer
     , model = model
     }

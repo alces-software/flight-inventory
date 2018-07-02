@@ -25,9 +25,10 @@ decoder =
         |> P.required "cable_colour" D.string
 
 
-create : Id -> String -> String -> Network
-create id name cableColour =
+create : Id -> String -> D.Value -> String -> Network
+create id name data cableColour =
     { id = id
     , name = name
+    , data = data
     , cableColour = cableColour
     }

@@ -10,6 +10,7 @@ type alias Asset idTag a =
     { a
         | id : Tagged idTag Int
         , name : String
+        , data : D.Value
     }
 
 
@@ -17,17 +18,19 @@ type alias Id idTag =
     Tagged idTag Int
 
 
-decoder : (Id idTag -> String -> a) -> D.Decoder a
+decoder : (Id idTag -> String -> D.Value -> a) -> D.Decoder a
 decoder constructor =
     P.decode constructor
         |> P.required "id" idDecoder
         |> P.required "name" D.string
+        |> P.required "data" D.value
 
 
-create : Id idTag -> String -> Asset idTag {}
-create id name =
+create : Id idTag -> String -> D.Value -> Asset idTag {}
+create id name data =
     { id = id
     , name = name
+    , data = data
     }
 
 

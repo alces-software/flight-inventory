@@ -23,10 +23,11 @@ decoder =
     PhysicalAsset.decoder create
 
 
-create : Id -> String -> String -> String -> NetworkSwitch
-create id name manufacturer model =
+create : Id -> String -> D.Value -> String -> String -> NetworkSwitch
+create id name data manufacturer model =
     { id = id
     , name = name
+    , data = data
     , manufacturer = manufacturer
     , model = model
     , boundingRect = Nothing

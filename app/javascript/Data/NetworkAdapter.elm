@@ -26,10 +26,11 @@ decoder =
         |> P.required "server_id" Asset.idDecoder
 
 
-create : Id -> String -> String -> String -> Server.Id -> NetworkAdapter
-create id name manufacturer model serverId =
+create : Id -> String -> D.Value -> String -> String -> Server.Id -> NetworkAdapter
+create id name data manufacturer model serverId =
     { id = id
     , name = name
+    , data = data
     , manufacturer = manufacturer
     , model = model
     , serverId = serverId
