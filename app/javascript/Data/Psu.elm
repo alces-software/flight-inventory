@@ -1,4 +1,4 @@
-module Data.Psu exposing (IdTag, Psu, decoder)
+module Data.Psu exposing (Id, IdTag, Psu, decoder)
 
 import Data.Asset as Asset
 import Data.Chassis as Chassis

@@ -1,4 +1,4 @@
-module Data.Node exposing (IdTag, Node, decoder)
+module Data.Node exposing (Id, IdTag, Node, decoder)
 
 import Data.Asset as Asset exposing (Asset)
 import Data.Group as Group

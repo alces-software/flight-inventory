@@ -1,5 +1,9 @@
 
-@mixin cover-screen {
+// Same colour as used for the app bar in alces-flight.com sites. XXX If this
+// app becomes an alces-flight.com site could maybe DRY this up.
+$flight-app-bar-blue: #2794d8;
+
+@mixin cover {
   height: 100%;
   width: 100%;
   left: 0;
@@ -7,13 +11,17 @@
 }
 
 #root {
-  @include cover-screen;
+  @include cover;
   position: absolute;
 }
 
 .svg-layer {
-  @include cover-screen;
+  @include cover;
   position: fixed;
+
+  // SVG elements should appear on top of everything else, but the root SVG
+  // element should not intercept clicks etc. itself
+  z-index: 1000;
   pointer-events: none;
 }
 
@@ -35,9 +43,30 @@
   }
 }
 
+@mixin hit-box-shadow($alpha) {
+  // Effectively just modifies element colour with given colour; `10000px`
+  // should just be a large enough value to ensure this always covers the whole
+  // element.
+  box-shadow: inset 0 0 10000px 10000px rgba($flight-app-bar-blue, $alpha);
+}
+
 @mixin asset {
   border: 1px solid black;
   padding: 5px;
+  position: relative;
+
+  .asset-hit-box {
+    @include cover;
+    position: absolute;
+
+    &:hover, &:focus {
+      @include hit-box-shadow(0.2);
+    }
+
+    &:active {
+      @include hit-box-shadow(0.1);
+    }
+  }
 }
 
 // Mixin for any top-level asset which appears directly in a rack.

@@ -10,7 +10,7 @@ module Data.State
         , networksByName
         , networksConnectedToSwitch
         , portsForAdapter
-        , selectedAsset
+        , selectedAssetData
         , serverNetworkAdaptersByName
         , serverNodesByName
         , switchesByName
@@ -55,7 +55,12 @@ type alias State =
 
 
 type SelectableAssetId
-    = ServerId Server.Id
+    = NetworkSwitchId NetworkSwitch.Id
+    | ChassisId Chassis.Id
+    | ServerId Server.Id
+    | NetworkAdapterId NetworkAdapter.Id
+    | PsuId Psu.Id
+    | NodeId Node.Id
 
 
 decoder : D.Decoder State
@@ -169,14 +174,35 @@ networksConnectedToSwitch state switch =
         |> Maybe.Extra.values
 
 
-selectedAsset : State -> Maybe Server
-selectedAsset state =
+selectedAssetData : State -> Maybe D.Value
+selectedAssetData state =
     let
-        assetFromId =
+        dataFromId =
             \id ->
                 case id of
+                    NetworkSwitchId switchId ->
+                        TaggedDict.get switchId state.networkSwitches
+                            |> Maybe.map .data
+
+                    ChassisId chassisId ->
+                        TaggedDict.get chassisId state.chassis
+                            |> Maybe.map .data
+
                     ServerId serverId ->
                         TaggedDict.get serverId state.servers
+                            |> Maybe.map .data
+
+                    NetworkAdapterId adapterId ->
+                        TaggedDict.get adapterId state.networkAdapters
+                            |> Maybe.map .data
+
+                    PsuId psuId ->
+                        TaggedDict.get psuId state.psus
+                            |> Maybe.map .data
+
+                    NodeId nodeId ->
+                        TaggedDict.get nodeId state.nodes
+                            |> Maybe.map .data
     in
-    Maybe.map assetFromId state.selectedAssetId
+    Maybe.map dataFromId state.selectedAssetId
         |> Maybe.Extra.join

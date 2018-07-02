@@ -41,9 +41,9 @@ selectedAssetInspector : State -> Html Msg
 selectedAssetInspector state =
     let
         treeViewElements =
-            case State.selectedAsset state of
-                Just server ->
-                    [ case JsonTree.parseValue server.data of
+            case State.selectedAssetData state of
+                Just data ->
+                    [ case JsonTree.parseValue data of
                         Ok jsonNode ->
                             JsonTree.view jsonNode
                                 jsonTreeConfig
@@ -112,15 +112,21 @@ switchView switchHeight switch =
         , title ("Network switch: " ++ switch.name)
         , style [ ( "height", toString switchHeight ++ "px" ) ]
         ]
-        [ assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
+        [ assetHitBox <| State.NetworkSwitchId switch.id
+        , assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
         ]
 
 
 chassisView : Int -> State -> Chassis -> Html Msg
 chassisView adapterHeight state chassis =
-    div [ class "chassis", title ("Chassis: " ++ chassis.name) ]
+    div
+        [ class "chassis"
+        , title ("Chassis: " ++ chassis.name)
+        ]
         (List.concat
-            [ [ assetTitle <| (PhysicalAsset.fullModel chassis ++ " chassis") ]
+            [ [ assetHitBox <| State.ChassisId chassis.id
+              , assetTitle <| (PhysicalAsset.fullModel chassis ++ " chassis")
+              ]
             , [ div
                     [ class "servers" ]
                     (List.map (serverView adapterHeight state)
@@ -142,10 +148,11 @@ serverView adapterHeight state server =
     div
         [ class "server"
         , title <| "Server: " ++ server.name
-        , onClick <| SelectAsset <| State.ServerId server.id
         ]
         (List.concat
-            [ [ assetTitle <| (PhysicalAsset.fullModel server ++ " server") ]
+            [ [ assetHitBox <| State.ServerId server.id
+              , assetTitle <| (PhysicalAsset.fullModel server ++ " server")
+              ]
             , [ div [ class "network-adapters" ]
                     (List.map
                         (networkAdapterView adapterHeight)
@@ -172,7 +179,9 @@ networkAdapterView adapterHeight adapter =
                 [ "Network adapter:", PhysicalAsset.fullModel adapter, adapter.name ]
         , style [ ( "height", toString adapterHeight ++ "px" ) ]
         ]
-        [ text "N" ]
+        [ assetHitBox <| State.NetworkAdapterId adapter.id
+        , text "N"
+        ]
 
 
 nodeView : State -> Node -> Html Msg
@@ -199,7 +208,9 @@ nodeView state node =
                     [ text group.name ]
                 , div
                     [ class "node", title "Node" ]
-                    [ text node.name ]
+                    [ assetHitBox <| State.NodeId node.id
+                    , text node.name
+                    ]
                 ]
 
         Nothing ->
@@ -210,7 +221,9 @@ nodeView state node =
 psuView : Psu -> Html Msg
 psuView psu =
     div [ class "psu", title <| "PSU: " ++ psu.name ]
-        [ text (PhysicalAsset.fullModel psu ++ " PSU") ]
+        [ assetHitBox <| State.PsuId psu.id
+        , text (PhysicalAsset.fullModel psu ++ " PSU")
+        ]
 
 
 idAttribute : String -> Asset idTag a -> Html.Attribute msg
@@ -223,3 +236,18 @@ idAttribute dataAttr { id } =
 assetTitle : String -> Html msg
 assetTitle t =
     span [ class "title" ] [ text t ]
+
+
+assetHitBox : State.SelectableAssetId -> Html Msg
+assetHitBox assetId =
+    -- Each selectable asset displayed in the Cluster diagram has a hit box, an
+    -- absolutely positioned div exactly covering the asset element's area. The
+    -- `onClick` handler and corresponding styling is added to this rather than
+    -- the asset element itself, as this avoids both the propagated click event
+    -- also triggering parent asset `onClick` handlers, and the styling also
+    -- being applied to the child asset elements.
+    div
+        [ class "asset-hit-box"
+        , onClick <| SelectAsset assetId
+        ]
+        []
