@@ -24,6 +24,12 @@ updateState message state =
         InboundPortData ( dataTag, data ) ->
             handlePortData state dataTag data ! []
 
+        SelectAsset assetId ->
+            { state | selectedAssetId = Just assetId } ! []
+
+        SetDataJsonTreeState treeState ->
+            { state | dataJsonTreeState = treeState } ! []
+
 
 handlePortData : State -> String -> E.Value -> State
 handlePortData state dataTag data =

@@ -13,6 +13,8 @@ import Geometry.Networks
 import Hashbow
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
+import JsonTree
 import Msg exposing (Msg(..))
 import Tagged
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
@@ -22,13 +24,57 @@ import View.SvgLayer as SvgLayer
 viewState : State -> Html Msg
 viewState state =
     div []
-        [ htmlLayer state
-        , SvgLayer.view state
+        [ SvgLayer.view state
+        , htmlLayer state
         ]
 
 
 htmlLayer : State -> Html Msg
 htmlLayer state =
+    div [ class "html-layer" ]
+        [ selectedAssetInspector state
+        , clusterDiagram state
+        ]
+
+
+selectedAssetInspector : State -> Html Msg
+selectedAssetInspector state =
+    let
+        treeViewElements =
+            case State.selectedAsset state of
+                Just server ->
+                    [ case JsonTree.parseValue server.data of
+                        Ok jsonNode ->
+                            JsonTree.view jsonNode
+                                jsonTreeConfig
+                                state.dataJsonTreeState
+
+                        Err message ->
+                            -- XXX Handle this better?
+                            span [] [ text <| "Error: " ++ message ]
+                    ]
+
+                Nothing ->
+                    []
+    in
+    div [ class "selected-asset-inspector" ]
+        treeViewElements
+
+
+jsonTreeConfig : JsonTree.Config Msg
+jsonTreeConfig =
+    { onSelect = Nothing
+    , toMsg = SetDataJsonTreeState
+    }
+
+
+clusterDiagram : State -> Html Msg
+clusterDiagram state =
+    div [ class "cluster-diagram" ] [ rackView state ]
+
+
+rackView : State -> Html Msg
+rackView state =
     let
         adapterHeight =
             -- Calculate the height we should display NetworkAdapters at here
@@ -93,7 +139,11 @@ chassisView adapterHeight state chassis =
 
 serverView : Int -> State -> Server -> Html Msg
 serverView adapterHeight state server =
-    div [ class "server", title ("Server: " ++ server.name) ]
+    div
+        [ class "server"
+        , title <| "Server: " ++ server.name
+        , onClick <| SelectAsset <| State.ServerId server.id
+        ]
         (List.concat
             [ [ assetTitle <| (PhysicalAsset.fullModel server ++ " server") ]
             , [ div [ class "network-adapters" ]

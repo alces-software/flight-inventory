@@ -119,7 +119,7 @@ axisForNetwork state network =
                 |> Maybe.map .left
 
         networkSpacing =
-            100
+            50
 
         networkIndex =
             State.networksByName state

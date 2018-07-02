@@ -1,6 +1,7 @@
 module Data.State
     exposing
-        ( State
+        ( SelectableAssetId(..)
+        , State
         , chassisByName
         , chassisPsusByName
         , chassisServersByName
@@ -9,6 +10,7 @@ module Data.State
         , networksByName
         , networksConnectedToSwitch
         , portsForAdapter
+        , selectedAsset
         , serverNetworkAdaptersByName
         , serverNodesByName
         , switchesByName
@@ -28,6 +30,7 @@ import Data.Server as Server exposing (Server)
 import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
+import JsonTree
 import List.Extra
 import Maybe.Extra
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
@@ -46,7 +49,13 @@ type alias State =
     , networkSwitches : TaggedDict NetworkSwitch.IdTag Int NetworkSwitch
     , nodes : TaggedDict Node.IdTag Int Node
     , groups : TaggedDict Group.IdTag Int Group
+    , dataJsonTreeState : JsonTree.State
+    , selectedAssetId : Maybe SelectableAssetId
     }
+
+
+type SelectableAssetId
+    = ServerId Server.Id
 
 
 decoder : D.Decoder State
@@ -62,6 +71,8 @@ decoder =
         |> P.required "networkSwitches" (taggedAssetDictDecoder NetworkSwitch.decoder)
         |> P.required "nodes" (taggedAssetDictDecoder Node.decoder)
         |> P.required "groups" (taggedAssetDictDecoder Group.decoder)
+        |> P.hardcoded JsonTree.defaultState
+        |> P.hardcoded Nothing
 
 
 assetDictDecoder : D.Decoder asset -> D.Decoder (Dict Int asset)
@@ -156,3 +167,16 @@ networksConnectedToSwitch state switch =
         |> Asset.uniqueIds
         |> List.map (flip TaggedDict.get state.networks)
         |> Maybe.Extra.values
+
+
+selectedAsset : State -> Maybe Server
+selectedAsset state =
+    let
+        assetFromId =
+            \id ->
+                case id of
+                    ServerId serverId ->
+                        TaggedDict.get serverId state.servers
+    in
+    Maybe.map assetFromId state.selectedAssetId
+        |> Maybe.Extra.join

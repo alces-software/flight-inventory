@@ -17,6 +17,24 @@
   pointer-events: none;
 }
 
+.html-layer {
+  display: grid;
+  // Middle column provides space for SVG network diagrams.
+  // XXX Consider making this more dynamic - if there's too many networks they
+  // could still overlap the first column atm.
+  grid-template-columns: 30% 20% 50%;
+  margin: 20px;
+
+  .selected-asset-inspector {
+    grid-column-start: 1;
+    position: fixed;
+  }
+
+  .cluster-diagram {
+    grid-column-start: 3;
+  }
+}
+
 @mixin asset {
   border: 1px solid black;
   padding: 5px;
@@ -32,9 +50,6 @@
 .rack {
   @include asset;
   background-color: darkgrey;
-  margin: 20px;
-  width: 50%;
-  float: right;
 }
 
 .network-switch {
