@@ -3,16 +3,13 @@ module Data.NetworkAdapter exposing (Id, IdTag, NetworkAdapter, decoder)
 import Data.Asset as Asset
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Server as Server
-import Geometry.BoundingRect as BoundingRect exposing (BoundingRect)
+import Geometry.BoundingRect exposing (HasBoundingRect)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 
 
 type alias NetworkAdapter =
-    PhysicalAsset IdTag
-        { serverId : Server.Id
-        , boundingRect : Maybe BoundingRect
-        }
+    HasBoundingRect (PhysicalAsset IdTag { serverId : Server.Id })
 
 
 type alias Id =

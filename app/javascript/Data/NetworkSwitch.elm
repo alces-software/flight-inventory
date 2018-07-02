@@ -2,14 +2,12 @@ module Data.NetworkSwitch exposing (Id, IdTag, NetworkSwitch, decoder)
 
 import Data.Asset as Asset
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
-import Geometry.BoundingRect as BoundingRect exposing (BoundingRect)
+import Geometry.BoundingRect exposing (HasBoundingRect)
 import Json.Decode as D
 
 
 type alias NetworkSwitch =
-    PhysicalAsset IdTag
-        { boundingRect : Maybe BoundingRect
-        }
+    HasBoundingRect (PhysicalAsset IdTag {})
 
 
 type alias Id =
