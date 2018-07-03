@@ -45,3 +45,12 @@ create id name data manufacturer model =
 fullModel : PhysicalAsset idTag a -> String
 fullModel { manufacturer, model } =
     String.join " " [ manufacturer, model ]
+
+
+description : String -> PhysicalAsset idTag a -> String
+description assetType asset =
+    String.join " "
+        [ fullModel asset
+        , assetType ++ ":"
+        , asset.name
+        ]

@@ -75,8 +75,16 @@ $svg-layer-z-index: 1000;
     resize: both;
     z-index: $svg-layer-z-index + 1000;
 
+    $faded-text-color: gray;
+
+    .tree-title {
+      text-align: center;
+      font-weight: normal;
+      color: $faded-text-color;
+    }
+
     .no-selection {
-      color: gray;
+      color: $faded-text-color;
 
       height: 66%;
       display: flex;

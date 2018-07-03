@@ -11,6 +11,7 @@ module Data.State
         , networksConnectedToSwitch
         , portsForAdapter
         , selectedAssetData
+        , selectedAssetDescription
         , serverNetworkAdaptersByName
         , serverNodesByName
         , switchesByName
@@ -25,6 +26,7 @@ import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPor
 import Data.NetworkConnection as NetworkConnection exposing (NetworkConnection)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.Node as Node exposing (Node)
+import Data.PhysicalAsset as PhysicalAsset
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
 import Dict exposing (Dict)
@@ -176,33 +178,97 @@ networksConnectedToSwitch state switch =
 
 selectedAssetData : State -> Maybe D.Value
 selectedAssetData state =
-    let
-        dataFromId =
-            \id ->
-                case id of
-                    NetworkSwitchId switchId ->
-                        TaggedDict.get switchId state.networkSwitches
-                            |> Maybe.map .data
+    -- XXX You'd think there'd be a DRYer way to write this, and similar for
+    -- below, but I can't seem to figure out how to do this.
+    transformSelectedAsset state
+        (\id ->
+            case id of
+                NetworkSwitchId switchId ->
+                    TaggedDict.get switchId state.networkSwitches
+                        |> Maybe.map .data
 
-                    ChassisId chassisId ->
-                        TaggedDict.get chassisId state.chassis
-                            |> Maybe.map .data
+                ChassisId chassisId ->
+                    TaggedDict.get chassisId state.chassis
+                        |> Maybe.map .data
 
-                    ServerId serverId ->
-                        TaggedDict.get serverId state.servers
-                            |> Maybe.map .data
+                ServerId serverId ->
+                    TaggedDict.get serverId state.servers
+                        |> Maybe.map .data
 
-                    NetworkAdapterId adapterId ->
-                        TaggedDict.get adapterId state.networkAdapters
-                            |> Maybe.map .data
+                NetworkAdapterId adapterId ->
+                    TaggedDict.get adapterId state.networkAdapters
+                        |> Maybe.map .data
 
-                    PsuId psuId ->
-                        TaggedDict.get psuId state.psus
-                            |> Maybe.map .data
+                PsuId psuId ->
+                    TaggedDict.get psuId state.psus
+                        |> Maybe.map .data
 
-                    NodeId nodeId ->
-                        TaggedDict.get nodeId state.nodes
-                            |> Maybe.map .data
-    in
-    Maybe.map dataFromId state.selectedAssetId
+                NodeId nodeId ->
+                    TaggedDict.get nodeId state.nodes
+                        |> Maybe.map .data
+        )
+
+
+selectedAssetDescription : State -> Maybe String
+selectedAssetDescription state =
+    transformSelectedAsset state
+        (\id ->
+            case id of
+                NetworkSwitchId switchId ->
+                    let
+                        switch =
+                            TaggedDict.get switchId state.networkSwitches
+                    in
+                    Maybe.map
+                        (PhysicalAsset.description "network switch")
+                        switch
+
+                ChassisId chassisId ->
+                    let
+                        chassis =
+                            TaggedDict.get chassisId state.chassis
+                    in
+                    Maybe.map
+                        (PhysicalAsset.description "chassis")
+                        chassis
+
+                ServerId serverId ->
+                    let
+                        server =
+                            TaggedDict.get serverId state.servers
+                    in
+                    Maybe.map
+                        (PhysicalAsset.description "server")
+                        server
+
+                NetworkAdapterId adapterId ->
+                    let
+                        adapter =
+                            TaggedDict.get adapterId state.networkAdapters
+                    in
+                    Maybe.map
+                        (PhysicalAsset.description "network adapter")
+                        adapter
+
+                PsuId psuId ->
+                    let
+                        psu =
+                            TaggedDict.get psuId state.psus
+                    in
+                    Maybe.map
+                        (PhysicalAsset.description "PSU")
+                        psu
+
+                NodeId nodeId ->
+                    let
+                        node =
+                            TaggedDict.get nodeId state.nodes
+                    in
+                    Maybe.map .name node
+        )
+
+
+transformSelectedAsset : State -> (SelectableAssetId -> Maybe a) -> Maybe a
+transformSelectedAsset state transform =
+    Maybe.map transform state.selectedAssetId
         |> Maybe.Extra.join
