@@ -3,6 +3,8 @@
 // app becomes an alces-flight.com site could maybe DRY this up.
 $flight-app-bar-blue: #2794d8;
 
+$svg-layer-z-index: 1000;
+
 @mixin cover {
   height: 100%;
   width: 100%;
@@ -24,9 +26,9 @@ $flight-app-bar-blue: #2794d8;
   @include cover;
   position: fixed;
 
-  // SVG elements should appear on top of everything else, but the root SVG
-  // element should not intercept clicks etc. itself
-  z-index: 1000;
+  // SVG elements should appear on top of the diagram, but the root SVG element
+  // should not intercept clicks etc. itself.
+  z-index: $svg-layer-z-index;
   pointer-events: none;
 }
 
@@ -53,9 +55,25 @@ $flight-app-bar-blue: #2794d8;
     position: sticky;
     top: $app-margin;
 
+    background-color: white;
+
+    // Can't set `min-width` to same as `width` as at point this will be
+    // rechecked, such as when the inspector is resized, this will be relative
+    // to the whole window width, and so the inspector would immediately jump
+    // to fill 100% of the screen width on resize. Instead just use a
+    // reasonable minimum (at least on my screen) for now.
     width: 100%;
-    height: 75vh;
+    min-width: 50vh;
+
+    $height: 75vh;
+    height: $height;
+    min-height: $height;
+
+    // Inspector should be scrollable and resizable, and show on top of SVG
+    // layer if they intersect.
     overflow: scroll;
+    resize: both;
+    z-index: $svg-layer-z-index + 1000;
 
     .no-selection {
       color: gray;
