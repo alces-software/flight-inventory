@@ -40,10 +40,10 @@ htmlLayer state =
 selectedAssetInspector : State -> Html Msg
 selectedAssetInspector state =
     let
-        treeViewElements =
+        treeView =
             case State.selectedAssetData state of
                 Just data ->
-                    [ case JsonTree.parseValue data of
+                    case JsonTree.parseValue data of
                         Ok jsonNode ->
                             JsonTree.view jsonNode
                                 jsonTreeConfig
@@ -51,14 +51,16 @@ selectedAssetInspector state =
 
                         Err message ->
                             -- XXX Handle this better?
-                            span [] [ text <| "Error: " ++ message ]
-                    ]
+                            span []
+                                [ text <| "Error: " ++ message ]
 
                 Nothing ->
-                    []
+                    div
+                        [ class "no-selection" ]
+                        [ text "Select an asset to inspect" ]
     in
     div [ class "selected-asset-inspector" ]
-        treeViewElements
+        [ treeView ]
 
 
 jsonTreeConfig : JsonTree.Config Msg
