@@ -30,6 +30,9 @@ updateState message state =
         SetDataJsonTreeState treeState ->
             { state | dataJsonTreeState = treeState } ! []
 
+        SetAppLayout layout ->
+            { state | layout = layout } ! []
+
 
 handlePortData : State -> String -> E.Value -> State
 handlePortData state dataTag data =

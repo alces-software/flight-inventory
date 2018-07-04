@@ -9,3 +9,4 @@ type Msg
     = InboundPortData ( String, E.Value )
     | SelectAsset State.SelectableAssetId
     | SetDataJsonTreeState JsonTree.State
+    | SetAppLayout State.AppLayout

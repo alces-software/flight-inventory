@@ -8,7 +8,7 @@ import Data.Node as Node exposing (Node)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
-import Data.State as State exposing (State)
+import Data.State as State exposing (AppLayout(..), State)
 import Geometry.Networks
 import Hashbow
 import Html exposing (..)
@@ -88,7 +88,39 @@ jsonTreeConfig =
 
 clusterDiagram : State -> Html Msg
 clusterDiagram state =
-    div [ class "cluster-diagram" ] [ rackView state ]
+    let
+        controls =
+            div
+                [ class "app-controls" ]
+                [ switchLayoutButton state ]
+
+        diagram =
+            case state.layout of
+                Physical ->
+                    rackView state
+
+                Logical ->
+                    span [] [ text "Logical Layout" ]
+    in
+    div
+        [ class "cluster-diagram" ]
+        [ controls
+        , diagram
+        ]
+
+
+switchLayoutButton : State -> Html Msg
+switchLayoutButton state =
+    let
+        ( text_, clickMsg ) =
+            case state.layout of
+                Physical ->
+                    ( "View logical layout", SetAppLayout Logical )
+
+                Logical ->
+                    ( "View physical layout", SetAppLayout Physical )
+    in
+    button [ onClick clickMsg ] [ text text_ ]
 
 
 rackView : State -> Html Msg

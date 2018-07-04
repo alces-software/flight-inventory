@@ -17,6 +17,10 @@ $svg-layer-z-index: 1000;
   border: 1px solid black;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 #root {
   @include cover;
   position: absolute;
@@ -96,6 +100,11 @@ $svg-layer-z-index: 1000;
   .cluster-diagram {
     grid-column-start: 3;
   }
+}
+
+.app-controls {
+  padding-bottom: 20px;
+  text-align: right;
 }
 
 @mixin hit-box-shadow($alpha) {

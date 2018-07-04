@@ -5,7 +5,7 @@ import Data.Network as Network exposing (Network)
 import Data.NetworkAdapter as NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
-import Data.State as State exposing (State)
+import Data.State as State exposing (AppLayout(..), State)
 import Dict exposing (Dict)
 import Geometry.Line as Line exposing (Line)
 import Geometry.Networks
@@ -21,9 +21,18 @@ import Tagged.Dict as TaggedDict exposing (TaggedDict)
 view : State -> Html msg
 view state =
     -- XXX Consider using https://github.com/elm-community/typed-svg instead.
+    let
+        networkElements =
+            case state.layout of
+                Physical ->
+                    drawNetworks state
+
+                Logical ->
+                    []
+    in
     svg
         [ class "svg-layer" ]
-        (drawNetworks state)
+        networkElements
 
 
 drawNetworks : State -> List (Svg msg)

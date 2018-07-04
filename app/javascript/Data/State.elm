@@ -1,6 +1,7 @@
 module Data.State
     exposing
-        ( SelectableAssetId(..)
+        ( AppLayout(..)
+        , SelectableAssetId(..)
         , State
         , chassisByName
         , chassisPsusByName
@@ -53,6 +54,7 @@ type alias State =
     , groups : TaggedDict Group.IdTag Int Group
     , dataJsonTreeState : JsonTree.State
     , selectedAssetId : Maybe SelectableAssetId
+    , layout : AppLayout
     }
 
 
@@ -63,6 +65,11 @@ type SelectableAssetId
     | NetworkAdapterId NetworkAdapter.Id
     | PsuId Psu.Id
     | NodeId Node.Id
+
+
+type AppLayout
+    = Physical
+    | Logical
 
 
 decoder : D.Decoder State
@@ -80,6 +87,7 @@ decoder =
         |> P.required "groups" (taggedAssetDictDecoder Group.decoder)
         |> P.hardcoded JsonTree.defaultState
         |> P.hardcoded Nothing
+        |> P.hardcoded Physical
 
 
 assetDictDecoder : D.Decoder asset -> D.Decoder (Dict Int asset)
