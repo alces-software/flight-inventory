@@ -8,6 +8,7 @@ module Data.State
         , chassisServersByName
         , connectionForPort
         , decoder
+        , groupNodesByName
         , networksByName
         , networksConnectedToSwitch
         , portsForAdapter
@@ -165,6 +166,14 @@ serverNodesByName : State -> Server -> List Node
 serverNodesByName state server =
     TaggedDict.filter
         (\_ node -> node.serverId == server.id)
+        state.nodes
+        |> nameOrderedValues
+
+
+groupNodesByName : State -> Group -> List Node
+groupNodesByName state group =
+    TaggedDict.filter
+        (\_ node -> node.groupId == group.id)
         state.nodes
         |> nameOrderedValues
 

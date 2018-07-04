@@ -2,6 +2,7 @@ module View exposing (viewState)
 
 import Data.Asset exposing (Asset)
 import Data.Chassis as Chassis exposing (Chassis)
+import Data.Group exposing (Group)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
 import Data.Node as Node exposing (Node)
@@ -100,7 +101,7 @@ clusterDiagram state =
                     rackView state
 
                 Logical ->
-                    span [] [ text "Logical Layout" ]
+                    logicalLayout state
     in
     div
         [ class "cluster-diagram" ]
@@ -121,6 +122,25 @@ switchLayoutButton state =
                     ( "View physical layout", SetAppLayout Physical )
     in
     button [ onClick clickMsg ] [ text text_ ]
+
+
+logicalLayout : State -> Html Msg
+logicalLayout state =
+    let
+        groups =
+            TaggedDict.values state.groups
+    in
+    div []
+        (List.map (groupView state) groups)
+
+
+groupView : State -> Group -> Html Msg
+groupView state group =
+    let
+        nodes =
+            State.groupNodesByName state group
+    in
+    groupedElements group (List.map nodeView nodes)
 
 
 rackView : State -> Html Msg
@@ -211,7 +231,7 @@ serverView adapterHeight state server =
               ]
             , [ div [ class "nodes" ]
                     (List.map
-                        (nodeView state)
+                        (physicalNodeView state)
                         (State.serverNodesByName state server)
                     )
               ]
@@ -234,38 +254,48 @@ networkAdapterView adapterHeight adapter =
         ]
 
 
-nodeView : State -> Node -> Html Msg
-nodeView state node =
+physicalNodeView : State -> Node -> Html Msg
+physicalNodeView state node =
     let
         nodeGroup =
             TaggedDict.get node.groupId state.groups
     in
     case nodeGroup of
         Just group ->
-            let
-                groupColour =
-                    Hashbow.hashbow group.name
-            in
-            div
-                [ class "group"
-                , style [ ( "border-color", groupColour ) ]
-                , title ("Group: " ++ group.name)
-                ]
-                [ strong
-                    [ class "group-name"
-                    , style [ ( "color", groupColour ) ]
-                    ]
-                    [ text group.name ]
-                , div
-                    [ class "node", title "Node" ]
-                    [ assetHitBox <| State.NodeId node.id
-                    , text node.name
-                    ]
-                ]
+            groupedElements group [ nodeView node ]
 
         Nothing ->
             -- XXX Handle this better!
             Debug.crash ("Node has no group: " ++ node.name)
+
+
+nodeView : Node -> Html Msg
+nodeView node =
+    div
+        [ class "node", title "Node" ]
+        [ assetHitBox <| State.NodeId node.id
+        , text node.name
+        ]
+
+
+groupedElements : Group -> List (Html Msg) -> Html Msg
+groupedElements group children =
+    let
+        groupColour =
+            Hashbow.hashbow group.name
+    in
+    div
+        [ class "group"
+        , style [ ( "border-color", groupColour ) ]
+        , title ("Group: " ++ group.name)
+        ]
+        (strong
+            [ class "group-name"
+            , style [ ( "color", groupColour ) ]
+            ]
+            [ text group.name ]
+            :: children
+        )
 
 
 psuView : Psu -> Html Msg
