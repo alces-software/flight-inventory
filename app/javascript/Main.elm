@@ -1,10 +1,10 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Data.State as State exposing (State)
 import Html exposing (..)
 import Json.Decode as D
-import Json.Encode as E
 import Msg exposing (Msg(..))
+import Ports
 import Update
 import View
 
@@ -79,19 +79,12 @@ update message model =
 
 
 
--- PORTS
-
-
-port jsToElm : (( String, E.Value ) -> msg) -> Sub msg
-
-
-
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    jsToElm InboundPortData
+    Ports.jsToElm InboundPortData
 
 
 
