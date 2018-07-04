@@ -11,6 +11,11 @@ namespace :alces do
       Rake::Task['assets:precompile'].invoke
 
       sh 'bundle exec rails server'
+
+    rescue Interrupt
+      # Stops Yarn complaining about packages being out-of-date when run `rails
+      # server` for development after this.
+      sh 'RAILS_ENV=development yarn install'
     end
   end
 end
