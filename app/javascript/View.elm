@@ -272,7 +272,12 @@ physicalNodeView state node =
 nodeView : Node -> Html Msg
 nodeView node =
     div
-        [ class "node", title "Node" ]
+        [ class "node"
+        , title "Node"
+
+        -- Picked up by Flipping JS library for animations.
+        , attribute "data-flip-key" node.name
+        ]
         [ assetHitBox <| State.NodeId node.id
         , text node.name
         ]

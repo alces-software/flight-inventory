@@ -11,6 +11,7 @@ import Json.Decode as D
 import Json.Encode as E
 import Maybe.Extra
 import Msg exposing (Msg(..))
+import Ports
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
@@ -31,7 +32,7 @@ updateState message state =
             { state | dataJsonTreeState = treeState } ! []
 
         SetAppLayout layout ->
-            { state | layout = layout } ! []
+            { state | layout = layout } ! [ Ports.animateSwitchLayout () ]
 
 
 handlePortData : State -> String -> E.Value -> State

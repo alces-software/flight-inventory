@@ -4,7 +4,8 @@
   "dependencies": {
     "@rails/webpacker": "3.5",
     "elm": "^0.18.0",
-    "elm-webpack-loader": "^4.5.0"
+    "elm-webpack-loader": "^4.5.0",
+    "flipping": "^1.0.0"
   },
   "devDependencies": {
     "elm-hot-loader": "^0.5.4",
