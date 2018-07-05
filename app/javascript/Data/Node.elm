@@ -11,6 +11,13 @@ type alias Node =
     Asset IdTag
         { serverId : Server.Id
         , groupId : Group.Id
+
+        -- Genders have a many-to-many relationship with Nodes, and only have a
+        -- single interesting property, `name`, which also uniquely identifies
+        -- that Gender within a domain. Therefore rather than have to do a
+        -- double join to get the Gender names associated with a Node we just
+        -- nest these here.
+        , genders : List String
         }
 
 
@@ -27,13 +34,22 @@ decoder =
     Asset.decoder create
         |> P.required "server_id" Asset.idDecoder
         |> P.required "group_id" Asset.idDecoder
+        |> P.required "genders" (D.list D.string)
 
 
-create : Id -> String -> D.Value -> Server.Id -> Group.Id -> Node
-create id name data serverId groupId =
+create :
+    Id
+    -> String
+    -> D.Value
+    -> Server.Id
+    -> Group.Id
+    -> List String
+    -> Node
+create id name data serverId groupId genders =
     { id = id
     , name = name
     , data = data
     , serverId = serverId
     , groupId = groupId
+    , genders = genders
     }
