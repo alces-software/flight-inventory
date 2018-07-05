@@ -204,6 +204,8 @@ html {
 }
 
 .group {
+  @include asset;
+
   // `border-color` will be dynamically generated based on the group name, so
   // each distinct group uses a different colour.
   border-width: 2px;

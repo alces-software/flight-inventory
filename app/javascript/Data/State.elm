@@ -65,6 +65,7 @@ type SelectableAssetId
     | ServerId Server.Id
     | NetworkAdapterId NetworkAdapter.Id
     | PsuId Psu.Id
+    | GroupId Group.Id
     | NodeId Node.Id
 
 
@@ -220,6 +221,10 @@ selectedAssetData state =
                     TaggedDict.get psuId state.psus
                         |> Maybe.map .data
 
+                GroupId groupId ->
+                    TaggedDict.get groupId state.groups
+                        |> Maybe.map .data
+
                 NodeId nodeId ->
                     TaggedDict.get nodeId state.nodes
                         |> Maybe.map .data
@@ -275,6 +280,13 @@ selectedAssetDescription state =
                     Maybe.map
                         (PhysicalAsset.description "PSU")
                         psu
+
+                GroupId groupId ->
+                    let
+                        group =
+                            TaggedDict.get groupId state.groups
+                    in
+                    Maybe.map (\g -> "Group: " ++ g.name) group
 
                 NodeId nodeId ->
                     let

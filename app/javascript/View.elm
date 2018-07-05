@@ -288,19 +288,25 @@ groupedElements group children =
     let
         groupColour =
             Hashbow.hashbow group.name
+
+        groupChildren =
+            List.concat
+                [ [ assetHitBox <| State.GroupId group.id
+                  , strong
+                        [ class "group-name"
+                        , style [ ( "color", groupColour ) ]
+                        ]
+                        [ text group.name ]
+                  ]
+                , children
+                ]
     in
     div
         [ class "group"
         , style [ ( "border-color", groupColour ) ]
         , title ("Group: " ++ group.name)
         ]
-        (strong
-            [ class "group-name"
-            , style [ ( "color", groupColour ) ]
-            ]
-            [ text group.name ]
-            :: children
-        )
+        groupChildren
 
 
 psuView : Psu -> Html Msg
