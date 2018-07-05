@@ -281,7 +281,7 @@ selectedAssetDescription state =
                         node =
                             TaggedDict.get nodeId state.nodes
                     in
-                    Maybe.map .name node
+                    Maybe.map (\n -> "Node: " ++ n.name) node
         )
 
 
