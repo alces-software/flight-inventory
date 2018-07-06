@@ -10,6 +10,7 @@ import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
 import Data.State as State exposing (AppLayout(..), State)
+import Dict
 import Geometry.Networks
 import Hashbow
 import Html exposing (..)
@@ -101,10 +102,10 @@ clusterDiagram state =
                     rackView state
 
                 LogicalInGroups ->
-                    logicalLayout state
+                    logicalGroupsLayout state
 
                 LogicalInGenders ->
-                    span [] [ text "logical in genders" ]
+                    logicalGendersLayout state
     in
     div
         [ class "cluster-diagram" ]
@@ -136,8 +137,8 @@ switchLayoutButtons state =
     List.map layoutButton layoutsAndTextWithoutCurrent
 
 
-logicalLayout : State -> Html Msg
-logicalLayout state =
+logicalGroupsLayout : State -> Html Msg
+logicalGroupsLayout state =
     let
         groups =
             TaggedDict.values state.groups
@@ -319,6 +320,40 @@ groupedElements group children =
         , title ("Group: " ++ group.name)
         ]
         groupChildren
+
+
+logicalGendersLayout : State -> Html Msg
+logicalGendersLayout state =
+    let
+        nodesByGender =
+            TaggedDict.values state.nodes
+                |> Node.nodesByGender
+    in
+    div []
+        (Dict.map genderNodesView nodesByGender
+            |> Dict.values
+        )
+
+
+genderNodesView : Node.GenderName -> List Node -> Html Msg
+genderNodesView gender nodes =
+    -- XXX DRY up with above.
+    let
+        genderColour =
+            Hashbow.hashbow gender
+    in
+    div
+        [ class "group"
+        , style [ ( "border-color", genderColour ) ]
+        , title ("Gender: " ++ gender)
+        ]
+        (strong
+            [ class "group-name"
+            , style [ ( "color", genderColour ) ]
+            ]
+            [ text gender ]
+            :: List.map nodeView nodes
+        )
 
 
 psuView : Psu -> Html Msg

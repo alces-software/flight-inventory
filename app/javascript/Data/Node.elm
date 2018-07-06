@@ -1,8 +1,17 @@
-module Data.Node exposing (Id, IdTag, Node, decoder)
+module Data.Node
+    exposing
+        ( GenderName
+        , Id
+        , IdTag
+        , Node
+        , decoder
+        , nodesByGender
+        )
 
 import Data.Asset as Asset exposing (Asset)
 import Data.Group as Group
 import Data.Server as Server
+import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 
@@ -17,8 +26,14 @@ type alias Node =
         -- that Gender within a domain. Therefore rather than have to do a
         -- double join to get the Gender names associated with a Node we just
         -- nest these here.
-        , genders : List String
+        , genders : List GenderName
         }
+
+
+type alias GenderName =
+    -- Provides no type safety, but at least gives an indication of what we
+    -- mean in functions which work with gender name Strings.
+    String
 
 
 type alias Id =
@@ -56,3 +71,37 @@ create id name data serverId groupId genders =
     , groupId = groupId
     , genders = genders
     }
+
+
+nodesByGender : List Node -> GendersDict
+nodesByGender nodes =
+    let
+        genderNodePairs : List ( GenderName, Node )
+        genderNodePairs =
+            List.concatMap
+                (\n -> List.map (\g -> ( g, n )) n.genders)
+                nodes
+
+        collateNodeGenders : ( GenderName, Node ) -> GendersDict -> GendersDict
+        collateNodeGenders ( gender, node ) gendersDict =
+            let
+                newNodeList =
+                    [ node ]
+
+                updateNodesForGender =
+                    \maybeNodeList ->
+                        Just <|
+                            case maybeNodeList of
+                                Just nodeList ->
+                                    List.concat [ nodeList, newNodeList ]
+
+                                Nothing ->
+                                    newNodeList
+            in
+            Dict.update gender updateNodesForGender gendersDict
+    in
+    List.foldl collateNodeGenders Dict.empty genderNodePairs
+
+
+type alias GendersDict =
+    Dict GenderName (List Node)
