@@ -71,7 +71,8 @@ type SelectableAssetId
 
 type AppLayout
     = Physical
-    | Logical
+    | LogicalInGroups
+    | LogicalInGenders
 
 
 decoder : D.Decoder State

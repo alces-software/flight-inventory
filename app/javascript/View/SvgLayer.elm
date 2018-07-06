@@ -27,7 +27,10 @@ view state =
                 Physical ->
                     drawNetworks state
 
-                Logical ->
+                LogicalInGroups ->
+                    []
+
+                LogicalInGenders ->
                     []
     in
     svg

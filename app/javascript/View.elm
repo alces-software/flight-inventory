@@ -93,15 +93,18 @@ clusterDiagram state =
         controls =
             div
                 [ class "app-controls" ]
-                [ switchLayoutButton state ]
+                (switchLayoutButtons state)
 
         diagram =
             case state.layout of
                 Physical ->
                     rackView state
 
-                Logical ->
+                LogicalInGroups ->
                     logicalLayout state
+
+                LogicalInGenders ->
+                    span [] [ text "logical in genders" ]
     in
     div
         [ class "cluster-diagram" ]
@@ -110,18 +113,27 @@ clusterDiagram state =
         ]
 
 
-switchLayoutButton : State -> Html Msg
-switchLayoutButton state =
+switchLayoutButtons : State -> List (Html Msg)
+switchLayoutButtons state =
     let
-        ( text_, clickMsg ) =
-            case state.layout of
-                Physical ->
-                    ( "View logical layout", SetAppLayout Logical )
+        allLayoutsAndText =
+            [ ( Physical, "Physical layout" )
+            , ( LogicalInGroups, "Logical layout in groups" )
+            , ( LogicalInGenders, "Logical layout in genders" )
+            ]
 
-                Logical ->
-                    ( "View physical layout", SetAppLayout Physical )
+        layoutsAndTextWithoutCurrent =
+            List.filter
+                (\( layout, _ ) -> layout /= state.layout)
+                allLayoutsAndText
+
+        layoutButton =
+            \( layout, text_ ) ->
+                button
+                    [ onClick <| SetAppLayout layout ]
+                    [ text text_ ]
     in
-    button [ onClick clickMsg ] [ text text_ ]
+    List.map layoutButton layoutsAndTextWithoutCurrent
 
 
 logicalLayout : State -> Html Msg
