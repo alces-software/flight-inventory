@@ -47,14 +47,14 @@ class Import
     # XXX Import networks without using `import_assets_of_type` for now as we
     # want to ensure we always extract the required `cable_colour` field, which
     # this does not currently support.
-    STDERR.puts 'Importing networks'
+    Log.info 'Importing networks'
 
     networks_data = metal_view('assets.networks')
-    STDERR.puts "Found #{networks_data.length} networks"
+    Log.info "Found #{networks_data.length} networks"
 
     networks_data.map do |data|
       name = asset_name(data)
-      STDERR.puts "Importing network #{name}"
+      Log.info "Importing network #{name}"
       cable_colour = data.fetch('cable_colour')
       Network.create!(name: name, data: data, cable_colour: cable_colour)
     end
@@ -93,7 +93,7 @@ class Import
     ) do |adapters|
       adapters.each do |adapter|
         adapter.data.fetch('ports').each do |interface, port_data|
-          STDERR.puts "Importing network adapter port #{interface} for adapter #{adapter.name}"
+          Log.info "Importing network adapter port #{interface} for adapter #{adapter.name}"
           port = NetworkAdapterPort.create!(
             interface: interface,
             network_adapter: adapter
@@ -101,7 +101,7 @@ class Import
 
           connected_network_reference = port_data['network']
           if connected_network_reference.present?
-            STDERR.puts "Port connected to network; creating connection"
+            Log.info "Port connected to network; creating connection"
 
             network_name = asset_name_from_reference(connected_network_reference)
             switch_reference = port_data.fetch('switch')
@@ -124,14 +124,14 @@ class Import
 
     parent_type = parent_class.to_s.underscore
 
-    STDERR.puts "Importing #{human_asset_type.pluralize}"
+    Log.info "Importing #{human_asset_type.pluralize}"
 
     all_data = metal_view("assets.#{asset_type.pluralize}")
-    STDERR.puts "Found #{all_data.length} #{human_asset_type.pluralize}"
+    Log.info "Found #{all_data.length} #{human_asset_type.pluralize}"
 
     assets = all_data.map do |data|
       name = asset_name(data)
-      STDERR.puts "Importing #{human_asset_type} #{name}"
+      Log.info "Importing #{human_asset_type} #{name}"
 
       asset_attributes = {name: name, data: data}
       if parent_class
@@ -142,7 +142,7 @@ class Import
 
       klass.create!(asset_attributes)
     rescue KeyError => ex
-      STDERR.puts "WARNING: #{human_asset_type} #{name} has no #{parent_class}, skipping: #{ex.message}"
+      Log.warning "#{human_asset_type} #{name} has no #{parent_class}, skipping: #{ex.message}"
     end.compact
 
     # Allow performing additional asset-specific processing before returning
@@ -161,8 +161,8 @@ class Import
         children_names.zip([asset.name] * children_names.length)
       end.to_h
 
-      STDERR.puts "Found these #{child_type.humanize(capitalize: false)}-#{human_asset_type} relationships:"
-      STDERR.puts JSON.pretty_generate(relationships).gsub(/^/, '    ')
+      Log.info "Found these #{child_type.humanize(capitalize: false)}-#{human_asset_type} relationships:"
+      Log.raw_info JSON.pretty_generate(relationships).gsub(/^/, '    ')
 
       # Return value of this function should be
       # `Hash[child_class, Hash[child_name, asset_name]]`.
@@ -173,10 +173,10 @@ class Import
   def import_groups
     all_groups = metal_view('groups.map(&:name)')
 
-    STDERR.puts "Found #{all_groups.length} groups: #{all_groups.join(', ')}"
+    Log.info "Found #{all_groups.length} groups: #{all_groups.join(', ')}"
 
     all_groups.map do |group|
-      STDERR.puts "Importing group #{group}..."
+      Log.info "Importing group #{group}..."
 
       group_data = metal_view("groups.#{group}.to_h")
 
@@ -194,11 +194,11 @@ class Import
     # merged.
     # all_nodes = ssh.exec!("nodeattr --expand | awk '{print $1}'").lines.map(&:chomp)
 
-    STDERR.puts "Found #{all_nodes.length} nodes: #{all_nodes.join(', ')}"
+    Log.info "Found #{all_nodes.length} nodes: #{all_nodes.join(', ')}"
 
     all_nodes.each do |node_name|
       if node_name == 'local'
-        STDERR.puts 'Skipping local node'
+        Log.info 'Skipping local node'
         next
       end
 
@@ -207,7 +207,7 @@ class Import
   end
 
   def import_node(node_name)
-    STDERR.puts "Importing node #{node_name}..."
+    Log.info "Importing node #{node_name}..."
 
     # XXX Use below with old Metalware, as above.
     # node_data = JSON.parse(ssh.exec!("metal view node.#{node} 2> /dev/null"))
@@ -226,7 +226,7 @@ class Import
     )
 
     node_genders = node_data['genders']
-    STDERR.puts "Creating/associating genders for node #{node_name}: #{node_genders.join(', ')}"
+    Log.info "Creating/associating genders for node #{node_name}: #{node_genders.join(', ')}"
     node_genders.each do |gender_name|
       gender = Gender.find_or_create_by!(name: gender_name)
       gender.nodes << node
@@ -235,7 +235,7 @@ class Import
 
   def metal_view(view_args)
     metal_command = "metal view '#{view_args}' 2> /dev/null"
-    STDERR.puts ">>> #{metal_command}"
+    Log.info ">>> #{metal_command}"
     output = ssh_connection.exec!(metal_command)
     JSON.parse(output)
   end
@@ -249,5 +249,21 @@ class Import
     # `^rack1-r630-chassis-780-server1`; we just want the name of the
     # referenced asset.
     reference.gsub(/^\^/, '')
+  end
+
+  module Log
+    class << self
+      def warning(text)
+        info "WARNING: #{text}"
+      end
+
+      def info(text)
+        raw_info text.squish
+      end
+
+      def raw_info(text)
+        STDERR.puts text
+      end
+    end
   end
 end
