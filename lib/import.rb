@@ -202,30 +202,34 @@ class Import
         next
       end
 
-      STDERR.puts "Importing node #{node_name}..."
+      import_node(node_name)
+    end
+  end
 
-      # XXX Use below with old Metalware, as above.
-      # node_data = JSON.parse(ssh.exec!("metal view node.#{node} 2> /dev/null"))
-      node_data = metal_view("nodes.#{node_name}.to_h")
+  def import_node(node_name)
+    STDERR.puts "Importing node #{node_name}..."
 
-      node_asset_data = metal_view("nodes.#{node_name}.asset")
-      node_server = asset_name(node_asset_data)
+    # XXX Use below with old Metalware, as above.
+    # node_data = JSON.parse(ssh.exec!("metal view node.#{node} 2> /dev/null"))
+    node_data = metal_view("nodes.#{node_name}.to_h")
 
-      node_group_name = metal_view("nodes.#{node_name}.group.name")
+    node_asset_data = metal_view("nodes.#{node_name}.asset")
+    node_server = asset_name(node_asset_data)
 
-      node = Node.create!(
-        name: node_name,
-        data: node_data,
-        server: Server.find_by_name!(node_server),
-        group: Group.find_by_name!(node_group_name),
-      )
+    node_group_name = metal_view("nodes.#{node_name}.group.name")
 
-      node_genders = node_data['genders']
-      STDERR.puts "Creating/associating genders for node #{node_name}: #{node_genders.join(', ')}"
-      node_genders.each do |gender_name|
-        gender = Gender.find_or_create_by!(name: gender_name)
-        gender.nodes << node
-      end
+    node = Node.create!(
+      name: node_name,
+      data: node_data,
+      server: Server.find_by_name!(node_server),
+      group: Group.find_by_name!(node_group_name),
+    )
+
+    node_genders = node_data['genders']
+    STDERR.puts "Creating/associating genders for node #{node_name}: #{node_genders.join(', ')}"
+    node_genders.each do |gender_name|
+      gender = Gender.find_or_create_by!(name: gender_name)
+      gender.nodes << node
     end
   end
 
