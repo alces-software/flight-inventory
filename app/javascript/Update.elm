@@ -50,6 +50,12 @@ handlePortData state dataTag data =
                     handlePositionsMessage state.networkSwitches data
             }
 
+        "nodePositions" ->
+            { state
+                | nodes =
+                    handlePositionsMessage state.nodes data
+            }
+
         _ ->
             -- XXX Handle this better
             let

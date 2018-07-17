@@ -1,10 +1,21 @@
 module View.Utils exposing (..)
 
+import Data.Asset exposing (Asset)
 import Data.State as State
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
+import Tagged
+
+
+{-| Attribute to display asset ID in DOM, to be picked up in JS.
+-}
+idAttribute : String -> Asset idTag a -> Html.Attribute msg
+idAttribute dataAttr { id } =
+    Tagged.untag id
+        |> toString
+        |> attribute dataAttr
 
 
 assetHitBox : State.SelectableAssetId -> Html Msg

@@ -12,22 +12,25 @@ import Data.Asset as Asset exposing (Asset)
 import Data.Group as Group
 import Data.Server as Server
 import Dict exposing (Dict)
+import Geometry.BoundingRect exposing (HasBoundingRect)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 
 
 type alias Node =
-    Asset IdTag
-        { serverId : Server.Id
-        , groupId : Group.Id
+    HasBoundingRect
+        (Asset IdTag
+            { serverId : Server.Id
+            , groupId : Group.Id
 
-        -- Genders have a many-to-many relationship with Nodes, and only have a
-        -- single interesting property, `name`, which also uniquely identifies
-        -- that Gender within a domain. Therefore rather than have to do a
-        -- double join to get the Gender names associated with a Node we just
-        -- nest these here.
-        , genders : List GenderName
-        }
+            -- Genders have a many-to-many relationship with Nodes, and only have a
+            -- single interesting property, `name`, which also uniquely identifies
+            -- that Gender within a domain. Therefore rather than have to do a
+            -- double join to get the Gender names associated with a Node we just
+            -- nest these here.
+            , genders : List GenderName
+            }
+        )
 
 
 type alias GenderName =
@@ -70,6 +73,7 @@ create id name data serverId groupId genders =
     , serverId = serverId
     , groupId = groupId
     , genders = genders
+    , boundingRect = Nothing
     }
 
 

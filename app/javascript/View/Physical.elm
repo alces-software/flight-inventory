@@ -1,6 +1,5 @@
 module View.Physical exposing (layout)
 
-import Data.Asset exposing (Asset)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
@@ -13,7 +12,6 @@ import Geometry.Networks
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Msg exposing (Msg(..))
-import Tagged
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
 import View.Logical
 import View.Utils
@@ -59,7 +57,7 @@ switchView : Int -> NetworkSwitch -> Html Msg
 switchView switchHeight switch =
     div
         [ class "network-switch"
-        , idAttribute "data-network-switch-id" switch
+        , View.Utils.idAttribute "data-network-switch-id" switch
         , title ("Network switch: " ++ switch.name)
         , style [ ( "height", toString switchHeight ++ "px" ) ]
         ]
@@ -124,7 +122,7 @@ networkAdapterView : Int -> NetworkAdapter -> Html Msg
 networkAdapterView adapterHeight adapter =
     div
         [ class "network-adapter"
-        , idAttribute "data-network-adapter-id" adapter
+        , View.Utils.idAttribute "data-network-adapter-id" adapter
         , title <|
             String.join " "
                 [ "Network adapter:", PhysicalAsset.fullModel adapter, adapter.name ]
@@ -158,13 +156,6 @@ psuView psu =
         [ View.Utils.assetHitBox <| State.PsuId psu.id
         , text (PhysicalAsset.fullModel psu ++ " PSU")
         ]
-
-
-idAttribute : String -> Asset idTag a -> Html.Attribute msg
-idAttribute dataAttr { id } =
-    Tagged.untag id
-        |> toString
-        |> attribute dataAttr
 
 
 assetTitle : String -> Html msg

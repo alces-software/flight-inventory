@@ -55,6 +55,7 @@ nodeView node =
     div
         [ class "node"
         , title "Node"
+        , View.Utils.idAttribute "data-node-id" node
 
         -- Picked up by Flipping JS library for animations.
         , attribute "data-flip-key" node.name
