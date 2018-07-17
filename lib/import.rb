@@ -231,6 +231,54 @@ class Import
       gender = Gender.find_or_create_by!(name: gender_name)
       gender.nodes << node
     end
+
+    # XXX Should we have a uniqueness constraint for `NetworkAdapterPort`
+    # interfaces, scoped to `Server` (through `NetworkAdapter`)? Don't think
+    # having multiple with same interface could ever be valid, and would avoid
+    # possibility of this happening accidentally, which could cause confusion
+    # and issues.
+    available_network_adapter_ports =
+      node.server.network_adapters.flat_map(&:network_adapter_ports)
+
+    Log.info "Associating network connections for node #{node_name} "
+    rendered_networks = metal_view(
+      "nodes.#{node_name}.config.networks.map { |name,data| [name, data.map {|k,v| [k,v]}.to_h ]}.to_h"
+    )
+    rendered_networks.each do |network_name, network_data|
+      interface = network_data.fetch('interface')
+
+      port = available_network_adapter_ports.find {|p| p.interface == interface}
+      unless port
+        Log.info <<~INFO
+          Could not find Server NetworkAdapterPort for Network
+          #{network_name} / interface #{interface} for Node #{node_name};
+          skipping network.
+        INFO
+        next
+      end
+
+      connection = port.network_connection
+      unless connection
+        Log.warning <<~WARNING
+          Could not find NetworkConnection for NetworkAdapterPort with
+          interface #{port.interface}, though Node #{node_name} is connected.
+        WARNING
+        next
+      end
+
+      # Sanity check to ensure Node and NetworkAdapterPort define consistent
+      # Network connection.
+      connection_network_name = connection.network.name
+      unless connection_network_name == network_name
+        Log.fatal <<~ERROR
+          Node #{node_name} defines interface #{interface} as connected to
+          #{network_name}, but corresponding NetworkAdapterPort defines it as
+          connected to #{connection_network_name}; don't know how to reconcile.
+        ERROR
+      end
+
+      connection.update!(node: node)
+    end
   end
 
   def metal_view(view_args)
@@ -253,6 +301,10 @@ class Import
 
   module Log
     class << self
+      def fatal(text)
+        raise "ERROR: #{text.squish}"
+      end
+
       def warning(text)
         info "WARNING: #{text}"
       end
