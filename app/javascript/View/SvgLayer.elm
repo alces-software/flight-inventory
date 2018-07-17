@@ -2,11 +2,8 @@ module View.SvgLayer exposing (view)
 
 import Data.Asset as Asset
 import Data.Network as Network exposing (Network)
-import Data.NetworkAdapter as NetworkAdapter exposing (NetworkAdapter)
-import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
-import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
+import Data.NetworkConnection as NetworkConnection
 import Data.State as State exposing (AppLayout(..), State)
-import Dict exposing (Dict)
 import Geometry.Line as Line exposing (Line)
 import Geometry.Networks
 import Geometry.Point as Point exposing (Point)
@@ -15,7 +12,6 @@ import List.Extra
 import Maybe.Extra
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
 view : State -> Html msg
@@ -53,37 +49,12 @@ drawNetworks state =
 drawNetwork : State -> Network -> List (Svg msg)
 drawNetwork state network =
     let
-        connections =
-            Dict.values
-                state.networkConnections
-                |> List.filter (\con -> con.networkId == network.id)
-
-        switches =
-            linkedAssets connections .networkSwitchId .networkSwitches
-
-        ports =
-            linkedAssets connections .networkAdapterPortId .networkAdapterPorts
-
-        adaptersWithPorts =
-            List.map
-                (\p ->
-                    Maybe.map
-                        (\adapter -> ( adapter, p ))
-                        (TaggedDict.get p.networkAdapterId state.networkAdapters)
-                )
-                ports
-                |> Maybe.Extra.values
-
-        linkedAssets : List a -> (a -> Asset.Id idTag) -> (State -> TaggedDict idTag Int b) -> List b
-        linkedAssets assets toLinkedAssetId toLinkedAssets =
-            List.map toLinkedAssetId assets
-                |> Asset.uniqueIds
-                |> List.map (toLinkedAssets state |> flip TaggedDict.get)
-                |> Maybe.Extra.values
+        denormalizedConnections =
+            State.denormalizedConnectionsForNetwork state network
     in
     case Geometry.Networks.axisForNetwork state network of
         Just axis ->
-            drawNetworkAlongAxis state axis network switches adaptersWithPorts
+            drawNetworkAlongAxis state axis network denormalizedConnections
 
         Nothing ->
             []
@@ -93,10 +64,9 @@ drawNetworkAlongAxis :
     State
     -> Float
     -> Network
-    -> List NetworkSwitch
-    -> List ( NetworkAdapter, NetworkAdapterPort )
+    -> List NetworkConnection.Denormalized
     -> List (Svg msg)
-drawNetworkAlongAxis state axis network switches adaptersWithPorts =
+drawNetworkAlongAxis state axis network connections =
     let
         switchLines =
             List.map
@@ -106,20 +76,30 @@ drawNetworkAlongAxis state axis network switches adaptersWithPorts =
                 switches
                 |> Maybe.Extra.values
 
-        adapterLines =
-            List.map (\( _, _, l ) -> l) adaptersPortsAndLines
+        switches =
+            List.map .networkSwitch connections
+                |> Asset.uniqueById
 
-        adaptersPortsAndLines : List ( NetworkAdapter, NetworkAdapterPort, Line )
-        adaptersPortsAndLines =
+        adapterPortLines =
+            List.map (\( _, l ) -> l) connectionsWithAdapterPortLines
+
+        connectionsWithAdapterPortLines : List ( NetworkConnection.Denormalized, Line )
+        connectionsWithAdapterPortLines =
             List.map
-                (\( a, p ) ->
+                (\connection ->
                     Maybe.map
-                        (\l -> ( a, p, l ))
+                        (\line -> ( connection, line ))
                         (lineForAsset regularLineWidth
-                            (Geometry.Networks.adapterPortPosition state p)
+                            -- XXX Could change `adapterPortPosition` to not
+                            -- independently find NetworkAdapter, since is
+                            -- already available here in `connection`.
+                            (Geometry.Networks.adapterPortPosition
+                                state
+                                connection.networkAdapterPort
+                            )
                         )
                 )
-                adaptersWithPorts
+                connections
                 |> Maybe.Extra.values
 
         lineForAsset : Int -> Maybe Point -> Maybe Line
@@ -132,7 +112,7 @@ drawNetworkAlongAxis state axis network switches adaptersWithPorts =
             \start -> { x = axis, y = start.y }
 
         horizontalLines =
-            List.concat [ switchLines, adapterLines ]
+            List.concat [ switchLines, adapterPortLines ]
 
         endPoints =
             List.map .end horizontalLines
@@ -175,18 +155,21 @@ drawNetworkAlongAxis state axis network switches adaptersWithPorts =
                         network.name
                         "font-size: 20px;"
 
-                adapterLabels =
-                    List.map adapterLabel adaptersPortsAndLines
+                adapterPortLabels =
+                    List.map adapterPortLabel connectionsWithAdapterPortLines
 
-                adapterLabel : ( NetworkAdapter, NetworkAdapterPort, Line ) -> Svg msg
-                adapterLabel ( a, p, l ) =
+                adapterPortLabel : ( NetworkConnection.Denormalized, Line ) -> Svg msg
+                adapterPortLabel ( connection, line ) =
                     let
                         labelPosition =
-                            { x = l.start.x - 70
-                            , y = l.start.y - 5
+                            { x = line.start.x - 70
+                            , y = line.start.y - 5
                             }
                     in
-                    drawLabel labelPosition p.interface "font-size: 12px;"
+                    drawLabel
+                        labelPosition
+                        connection.networkAdapterPort.interface
+                        "font-size: 12px;"
 
                 drawLine =
                     \lineRecord ->
@@ -217,7 +200,7 @@ drawNetworkAlongAxis state axis network switches adaptersWithPorts =
             in
             List.concat
                 [ List.map drawLine allLines
-                , adapterLabels
+                , adapterPortLabels
                 , [ networkLabel ]
                 ]
 

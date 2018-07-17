@@ -8,6 +8,7 @@ module Data.State
         , chassisServersByName
         , connectionForPort
         , decoder
+        , denormalizedConnectionsForNetwork
         , groupNodesByName
         , networksByName
         , networksConnectedToSwitch
@@ -302,3 +303,50 @@ transformSelectedAsset : State -> (SelectableAssetId -> Maybe a) -> Maybe a
 transformSelectedAsset state transform =
     Maybe.map transform state.selectedAssetId
         |> Maybe.Extra.join
+
+
+denormalizedConnectionsForNetwork : State -> Network -> List NetworkConnection.Denormalized
+denormalizedConnectionsForNetwork state network =
+    Dict.values state.networkConnections
+        |> List.filter (\nc -> nc.networkId == network.id)
+        |> List.map (denormalizeNetworkConnection state)
+        |> Maybe.Extra.values
+
+
+denormalizeNetworkConnection : State -> NetworkConnection -> Maybe NetworkConnection.Denormalized
+denormalizeNetworkConnection state connection =
+    let
+        adapterPort =
+            TaggedDict.get
+                connection.networkAdapterPortId
+                state.networkAdapterPorts
+
+        adapter =
+            Maybe.map
+                (.networkAdapterId
+                    >> flip TaggedDict.get state.networkAdapters
+                )
+                adapterPort
+                |> Maybe.Extra.join
+
+        switch =
+            TaggedDict.get
+                connection.networkSwitchId
+                state.networkSwitches
+
+        node =
+            Maybe.map (flip TaggedDict.get state.nodes)
+                connection.nodeId
+                |> Maybe.Extra.join
+    in
+    case ( adapterPort, adapter, switch ) of
+        ( Just adapterPort_, Just adapter_, Just switch_ ) ->
+            Just
+                { networkAdapterPort = adapterPort_
+                , networkAdapter = adapter_
+                , networkSwitch = switch_
+                , node = node
+                }
+
+        _ ->
+            Nothing

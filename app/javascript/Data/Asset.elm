@@ -47,3 +47,8 @@ uniqueIds =
     List.map Tagged.untag
         >> List.Extra.unique
         >> List.map Tagged.tag
+
+
+uniqueById : List (Asset idTag a) -> List (Asset idTag a)
+uniqueById =
+    List.Extra.uniqueBy (.id >> Tagged.untag)
