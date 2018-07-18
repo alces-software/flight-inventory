@@ -210,35 +210,31 @@ drawInternalNetwork :
     -> List NetworkConnection.Denormalized
     -> List (Svg msg)
 drawInternalNetwork state network connections =
-    let
-        connectionLine =
-            \connection ->
-                case ( portPoint connection, nodePoint connection ) of
-                    ( Just portPoint_, Just nodePoint_ ) ->
-                        Just <| Line portPoint_ nodePoint_ standardLineWidth
-
-                    _ ->
-                        Nothing
-
-        portPoint =
-            \connection ->
-                Geometry.Networks.adapterPortPosition
-                    state
-                    connection.networkAdapterPort
-
-        nodePoint =
-            \connection ->
-                Maybe.map
-                    (Geometry.Networks.nodeConnectionPosition
-                        state
-                        network
-                    )
-                    connection.node
-                    |> Maybe.Extra.join
-    in
-    List.map connectionLine connections
+    List.map (nodeConnectionLine state network) connections
         |> Maybe.Extra.values
         |> List.map (drawNetworkLine network)
+
+
+nodeConnectionLine : State -> Network -> NetworkConnection.Denormalized -> Maybe Line
+nodeConnectionLine state network connection =
+    let
+        portPoint =
+            Geometry.Networks.adapterPortPosition
+                state
+                connection.networkAdapterPort
+
+        nodePoint =
+            Maybe.map
+                (Geometry.Networks.nodeConnectionPosition state network)
+                connection.node
+                |> Maybe.Extra.join
+    in
+    case ( portPoint, nodePoint ) of
+        ( Just portPoint_, Just nodePoint_ ) ->
+            Just <| Line portPoint_ nodePoint_ standardLineWidth
+
+        _ ->
+            Nothing
 
 
 drawNetworkLine : Network -> Line -> Svg msg
