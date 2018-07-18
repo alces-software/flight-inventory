@@ -197,11 +197,6 @@ class Import
     Log.info "Found #{all_nodes.length} nodes: #{all_nodes.join(', ')}"
 
     all_nodes.each do |node_name|
-      if node_name == 'local'
-        Log.info 'Skipping local node'
-        next
-      end
-
       import_node(node_name)
     end
   end
