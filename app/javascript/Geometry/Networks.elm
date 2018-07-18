@@ -3,6 +3,7 @@ module Geometry.Networks
         ( adapterHeight
         , adapterPortPosition
         , axisForNetwork
+        , nodeConnectionPosition
         , switchConnectionPosition
         , switchHeight
         )
@@ -10,6 +11,7 @@ module Geometry.Networks
 import Data.Network as Network exposing (Network)
 import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
+import Data.Node exposing (Node)
 import Data.State as State exposing (State)
 import Geometry.BoundingRect as BoundingRect
 import Geometry.Point exposing (Point)
@@ -104,6 +106,19 @@ switchConnectionPosition state network switch =
             BoundingRect.connectionPoint network connectedNetworks
     in
     Maybe.map connectionPoint switch.boundingRect
+        |> Maybe.Extra.join
+
+
+nodeConnectionPosition : State -> Network -> Node -> Maybe Point
+nodeConnectionPosition state network node =
+    let
+        connectedNetworks =
+            State.networksConnectedToNode state node
+
+        connectionPoint =
+            BoundingRect.connectionPoint network connectedNetworks
+    in
+    Maybe.map connectionPoint node.boundingRect
         |> Maybe.Extra.join
 
 

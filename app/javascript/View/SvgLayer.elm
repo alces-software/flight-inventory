@@ -4,7 +4,6 @@ import Data.Asset as Asset
 import Data.Network as Network exposing (Network)
 import Data.NetworkConnection as NetworkConnection
 import Data.State as State exposing (AppLayout(..), State)
-import Geometry.BoundingRect
 import Geometry.Line as Line exposing (Line)
 import Geometry.Networks
 import Geometry.Point as Point exposing (Point)
@@ -229,20 +228,13 @@ drawInternalNetwork state network connections =
 
         nodePoint =
             \connection ->
-                case connection.node of
-                    Just node_ ->
-                        case node_.boundingRect of
-                            Just rect ->
-                                Geometry.BoundingRect.connectionPoint
-                                    network
-                                    (State.networksConnectedToNode state node_)
-                                    rect
-
-                            Nothing ->
-                                Nothing
-
-                    Nothing ->
-                        Nothing
+                Maybe.map
+                    (Geometry.Networks.nodeConnectionPosition
+                        state
+                        network
+                    )
+                    connection.node
+                    |> Maybe.Extra.join
     in
     List.map connectionLine connections
         |> Maybe.Extra.values
