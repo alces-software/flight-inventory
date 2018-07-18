@@ -4,6 +4,7 @@ import Data.Asset as Asset
 import Data.Network as Network exposing (Network)
 import Data.NetworkConnection as NetworkConnection
 import Data.State as State exposing (AppLayout(..), State)
+import Geometry.BoundingRect
 import Geometry.Line as Line exposing (Line)
 import Geometry.Networks
 import Geometry.Point as Point exposing (Point)
@@ -51,22 +52,32 @@ drawNetwork state network =
     let
         denormalizedConnections =
             State.denormalizedConnectionsForNetwork state network
+
+        externalNetworkElements =
+            case Geometry.Networks.axisForNetwork state network of
+                Just axis ->
+                    drawExternalNetworkAlongAxis
+                        state
+                        axis
+                        network
+                        denormalizedConnections
+
+                Nothing ->
+                    []
+
+        internalNetworkElements =
+            drawInternalNetwork state network denormalizedConnections
     in
-    case Geometry.Networks.axisForNetwork state network of
-        Just axis ->
-            drawNetworkAlongAxis state axis network denormalizedConnections
-
-        Nothing ->
-            []
+    List.concat [ externalNetworkElements, internalNetworkElements ]
 
 
-drawNetworkAlongAxis :
+drawExternalNetworkAlongAxis :
     State
     -> Float
     -> Network
     -> List NetworkConnection.Denormalized
     -> List (Svg msg)
-drawNetworkAlongAxis state axis network connections =
+drawExternalNetworkAlongAxis state axis network connections =
     let
         switchLines =
             List.map
@@ -89,7 +100,7 @@ drawNetworkAlongAxis state axis network connections =
                 (\connection ->
                     Maybe.map
                         (\line -> ( connection, line ))
-                        (lineForAsset regularLineWidth
+                        (lineForAsset standardLineWidth
                             -- XXX Could change `adapterPortPosition` to not
                             -- independently find NetworkAdapter, since is
                             -- already available here in `connection`.
@@ -129,13 +140,10 @@ drawNetworkAlongAxis state axis network connections =
                 |> Maybe.map (\p -> Point p.x (p.y - bottomPointOffset))
 
         bottomPointOffset =
-            regularLineWidth / 2
+            toFloat standardLineWidth / 2
 
         trunkLineWidth =
-            regularLineWidth * 2
-
-        regularLineWidth =
-            2
+            standardLineWidth * 2
     in
     case ( maybeTopPoint, maybeBottomPoint ) of
         ( Just top, Just bottom ) ->
@@ -171,19 +179,6 @@ drawNetworkAlongAxis state axis network connections =
                         connection.networkAdapterPort.interface
                         "font-size: 12px;"
 
-                drawLine =
-                    \lineRecord ->
-                        line
-                            [ x1 <| toString lineRecord.start.x
-                            , y1 <| toString lineRecord.start.y
-                            , x2 <| toString lineRecord.end.x
-                            , y2 <| toString lineRecord.end.y
-                            , stroke network.cableColour
-                            , strokeWidth <| toString lineRecord.width
-                            , strokeLinecap "square"
-                            ]
-                            []
-
                 drawLabel : Point -> String -> String -> Svg msg
                 drawLabel =
                     \point label styles ->
@@ -199,7 +194,7 @@ drawNetworkAlongAxis state axis network connections =
                             [ text label ]
             in
             List.concat
-                [ List.map drawLine allLines
+                [ List.map (drawNetworkLine network) allLines
                 , adapterPortLabels
                 , [ networkLabel ]
                 ]
@@ -208,3 +203,63 @@ drawNetworkAlongAxis state axis network connections =
             -- If we don't have a top and a bottom point then we can't have any
             -- points in the network at all, so nothing to draw.
             []
+
+
+drawInternalNetwork :
+    State
+    -> Network
+    -> List NetworkConnection.Denormalized
+    -> List (Svg msg)
+drawInternalNetwork state network connections =
+    let
+        connectionLine =
+            \connection ->
+                case ( portPoint connection, nodePoint connection ) of
+                    ( Just portPoint_, Just nodePoint_ ) ->
+                        Just <| Line portPoint_ nodePoint_ standardLineWidth
+
+                    _ ->
+                        Nothing
+
+        portPoint =
+            \connection ->
+                Geometry.Networks.adapterPortPosition
+                    state
+                    connection.networkAdapterPort
+
+        nodePoint =
+            \connection ->
+                case connection.node of
+                    Just node_ ->
+                        case node_.boundingRect of
+                            Just rect ->
+                                Geometry.BoundingRect.connectionPoint node_ [ node_ ] rect
+
+                            Nothing ->
+                                Nothing
+
+                    Nothing ->
+                        Nothing
+    in
+    List.map connectionLine connections
+        |> Maybe.Extra.values
+        |> List.map (drawNetworkLine network)
+
+
+drawNetworkLine : Network -> Line -> Svg msg
+drawNetworkLine network line_ =
+    line
+        [ x1 <| toString line_.start.x
+        , y1 <| toString line_.start.y
+        , x2 <| toString line_.end.x
+        , y2 <| toString line_.end.y
+        , stroke network.cableColour
+        , strokeWidth <| toString line_.width
+        , strokeLinecap "square"
+        ]
+        []
+
+
+standardLineWidth : Int
+standardLineWidth =
+    2
