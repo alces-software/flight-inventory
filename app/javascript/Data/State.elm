@@ -189,22 +189,29 @@ nameOrderedValues dict =
 
 networksConnectedToSwitch : State -> NetworkSwitch -> List Network
 networksConnectedToSwitch state switch =
-    Dict.values state.networkConnections
-        |> List.filter (.networkSwitchId >> (==) switch.id)
-        |> List.map .networkId
-        |> Asset.uniqueIds
-        |> List.map (flip TaggedDict.get state.networks)
-        |> Maybe.Extra.values
+    connectedNetworks state (.networkSwitchId >> (==) switch.id)
 
 
 networksConnectedToNode : State -> Node -> List Network
 networksConnectedToNode state node =
+    let
+        isNodeConnection =
+            .nodeId
+                >> Maybe.map ((==) node.id)
+                >> Maybe.withDefault False
+    in
+    connectedNetworks state isNodeConnection
+
+
+connectedNetworks : State -> (NetworkConnection -> Bool) -> List Network
+connectedNetworks state isMatchingConnection =
     Dict.values state.networkConnections
-        |> List.filter ((.nodeId >> Maybe.map ((==) node.id)) >> Maybe.withDefault False)
+        |> List.filter isMatchingConnection
         |> List.map .networkId
         |> Asset.uniqueIds
         |> List.map (flip TaggedDict.get state.networks)
         |> Maybe.Extra.values
+        -- Sort networks by name so always drawn in consistent order.
         |> List.sortBy .name
 
 

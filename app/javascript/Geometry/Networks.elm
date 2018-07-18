@@ -97,12 +97,11 @@ adapterPortPosition state adapterPort =
 switchConnectionPosition : State -> Network -> NetworkSwitch -> Maybe Point
 switchConnectionPosition state network switch =
     let
-        nameOrderedConnectedNetworks =
+        connectedNetworks =
             State.networksConnectedToSwitch state switch
-                |> List.sortBy .name
 
         connectionPoint =
-            BoundingRect.connectionPoint network nameOrderedConnectedNetworks
+            BoundingRect.connectionPoint network connectedNetworks
     in
     Maybe.map connectionPoint switch.boundingRect
         |> Maybe.Extra.join
