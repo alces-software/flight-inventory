@@ -11,6 +11,7 @@ module Data.State
         , denormalizedConnectionsForNetwork
         , groupNodesByName
         , networksByName
+        , networksConnectedToNode
         , networksConnectedToSwitch
         , portsForAdapter
         , selectedAssetData
@@ -194,6 +195,17 @@ networksConnectedToSwitch state switch =
         |> Asset.uniqueIds
         |> List.map (flip TaggedDict.get state.networks)
         |> Maybe.Extra.values
+
+
+networksConnectedToNode : State -> Node -> List Network
+networksConnectedToNode state node =
+    Dict.values state.networkConnections
+        |> List.filter ((.nodeId >> Maybe.map ((==) node.id)) >> Maybe.withDefault False)
+        |> List.map .networkId
+        |> Asset.uniqueIds
+        |> List.map (flip TaggedDict.get state.networks)
+        |> Maybe.Extra.values
+        |> List.sortBy .name
 
 
 selectedAssetData : State -> Maybe D.Value

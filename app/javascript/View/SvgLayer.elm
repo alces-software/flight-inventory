@@ -233,7 +233,10 @@ drawInternalNetwork state network connections =
                     Just node_ ->
                         case node_.boundingRect of
                             Just rect ->
-                                Geometry.BoundingRect.connectionPoint node_ [ node_ ] rect
+                                Geometry.BoundingRect.connectionPoint
+                                    network
+                                    (State.networksConnectedToNode state node_)
+                                    rect
 
                             Nothing ->
                                 Nothing
