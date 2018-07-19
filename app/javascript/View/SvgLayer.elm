@@ -186,7 +186,7 @@ drawExternalNetworkAlongAxis state axis network connections =
                             , y <| toString point.y
                             , Svg.Attributes.style <|
                                 "fill: "
-                                    ++ network.cableColour
+                                    ++ Network.colour network
                                     ++ "; "
                                     ++ styles
                             ]
@@ -244,7 +244,7 @@ drawNetworkLine network line_ =
         , y1 <| toString line_.start.y
         , x2 <| toString line_.end.x
         , y2 <| toString line_.end.y
-        , stroke network.cableColour
+        , stroke <| Network.colour network
         , strokeWidth <| toString line_.width
         , strokeLinecap "square"
         ]

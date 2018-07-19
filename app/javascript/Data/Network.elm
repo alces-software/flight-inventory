@@ -1,4 +1,4 @@
-module Data.Network exposing (Id, IdTag, Network, decoder)
+module Data.Network exposing (Id, IdTag, Network, colour, decoder)
 
 import Data.Asset as Asset exposing (Asset)
 import Json.Decode as D
@@ -35,3 +35,17 @@ create id name data cableColour =
     , data = data
     , cableColour = cableColour
     }
+
+
+colour : Network -> String
+colour { cableColour } =
+    -- Quick fix to allow clearly displaying Networks with the same cable
+    -- colour as the background colour; might be better to keep the same colour
+    -- and instead show a border around the whole network, but this is
+    -- non-trivial to do in a way which looks good since each network diagram
+    -- consists of arbitrary lines drawn over each other (also relevant:
+    -- https://stackoverflow.com/a/8845581/2620402).
+    if cableColour == "white" then
+        "black"
+    else
+        cableColour
