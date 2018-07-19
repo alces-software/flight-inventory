@@ -3,7 +3,6 @@ module View.Physical exposing (layout)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
-import Data.Node as Node exposing (Node)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
@@ -12,7 +11,6 @@ import Geometry.Networks
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Msg exposing (Msg(..))
-import Tagged.Dict as TaggedDict exposing (TaggedDict)
 import View.Logical
 import View.Utils
 
@@ -109,7 +107,7 @@ serverView adapterHeight state server =
               ]
             , [ div [ class "nodes" ]
                     (List.map
-                        (physicalNodeView state)
+                        View.Logical.nodeView
                         (State.serverNodesByName state server)
                     )
               ]
@@ -130,23 +128,6 @@ networkAdapterView adapterHeight adapter =
         [ View.Utils.assetHitBox <| State.NetworkAdapterId adapter.id
         , text "N"
         ]
-
-
-physicalNodeView : State -> Node -> Html Msg
-physicalNodeView state node =
-    let
-        nodeGroup =
-            TaggedDict.get node.groupId state.groups
-    in
-    case nodeGroup of
-        Just group ->
-            View.Logical.groupedElements
-                group
-                [ View.Logical.nodeView node ]
-
-        Nothing ->
-            -- XXX Handle this better!
-            Debug.crash ("Node has no group: " ++ node.name)
 
 
 psuView : Psu -> Html Msg

@@ -1,7 +1,6 @@
 module View.Logical
     exposing
         ( gendersLayout
-        , groupedElements
         , groupsLayout
         , nodeView
         )
@@ -46,8 +45,28 @@ groupView state group =
     let
         nodes =
             State.groupNodesByName state group
+
+        groupColour =
+            Hashbow.hashbow group.name
+
+        groupChildren =
+            List.concat
+                [ [ View.Utils.assetHitBox <| State.GroupId group.id
+                  , strong
+                        [ class "group-name"
+                        , style [ ( "color", groupColour ) ]
+                        ]
+                        [ text group.name ]
+                  ]
+                , List.map nodeView nodes
+                ]
     in
-    groupedElements group (List.map nodeView nodes)
+    div
+        [ class "group"
+        , style [ ( "border-color", groupColour ) ]
+        , title ("Group: " ++ group.name)
+        ]
+        groupChildren
 
 
 nodeView : Node -> Html Msg
@@ -65,35 +84,9 @@ nodeView node =
         ]
 
 
-groupedElements : Group -> List (Html Msg) -> Html Msg
-groupedElements group children =
-    let
-        groupColour =
-            Hashbow.hashbow group.name
-
-        groupChildren =
-            List.concat
-                [ [ View.Utils.assetHitBox <| State.GroupId group.id
-                  , strong
-                        [ class "group-name"
-                        , style [ ( "color", groupColour ) ]
-                        ]
-                        [ text group.name ]
-                  ]
-                , children
-                ]
-    in
-    div
-        [ class "group"
-        , style [ ( "border-color", groupColour ) ]
-        , title ("Group: " ++ group.name)
-        ]
-        groupChildren
-
-
 genderNodesView : Node.GenderName -> List Node -> Html Msg
 genderNodesView gender nodes =
-    -- XXX DRY up with above.
+    -- XXX DRY up with `groupView`.
     let
         genderColour =
             Hashbow.hashbow gender
