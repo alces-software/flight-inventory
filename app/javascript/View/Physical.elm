@@ -39,8 +39,7 @@ rackView state =
             -- less important here since most likely far fewer switches.
             Geometry.Networks.switchHeight state
     in
-    -- XXX Fake rack for now
-    div [ class "rack" ]
+    div [ class "cluster" ]
         (List.concat
             [ [ assetTitle <| state.clusterName ]
             , List.map
