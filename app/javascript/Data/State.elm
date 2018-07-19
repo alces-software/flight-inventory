@@ -43,7 +43,8 @@ import Tagged.Dict as TaggedDict exposing (TaggedDict)
 
 
 type alias State =
-    { chassis : TaggedDict Chassis.IdTag Int Chassis
+    { clusterName : String
+    , chassis : TaggedDict Chassis.IdTag Int Chassis
     , servers : TaggedDict Server.IdTag Int Server
     , psus : TaggedDict Psu.IdTag Int Psu
     , networkAdapters : TaggedDict NetworkAdapter.IdTag Int NetworkAdapter
@@ -80,6 +81,7 @@ type AppLayout
 decoder : D.Decoder State
 decoder =
     P.decode State
+        |> P.required "nodes" clusterNameDecoder
         |> P.required "chassis" (taggedAssetDictDecoder Chassis.decoder)
         |> P.required "servers" (taggedAssetDictDecoder Server.decoder)
         |> P.required "psus" (taggedAssetDictDecoder Psu.decoder)
@@ -93,6 +95,25 @@ decoder =
         |> P.hardcoded JsonTree.defaultState
         |> P.hardcoded Nothing
         |> P.hardcoded Physical
+
+
+clusterNameDecoder : D.Decoder String
+clusterNameDecoder =
+    -- Get the answer to the `cluster_name` question for the first Node and
+    -- save this as the Cluster name.
+    -- XXX This is likely to be quite brittle: requires us to have at least 1
+    -- Node (will probably always be the case though) and that this Node has an
+    -- answer to this question. Would probably be more robust/Metalware-y to
+    -- use the rendered value for `config.cluster_name` instead, since this is
+    -- more likely to exist; ideally we would store and import `cluster_name`
+    -- independently of a particular Node (maybe using `metal view
+    -- domain.config.cluster_name`, this does not give correct value with
+    -- current Cluster though).
+    D.index 0
+        (D.at
+            [ "data", "answer", "cluster_name" ]
+            D.string
+        )
 
 
 assetDictDecoder : D.Decoder asset -> D.Decoder (Dict Int asset)

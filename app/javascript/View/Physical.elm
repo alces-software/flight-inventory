@@ -42,7 +42,7 @@ rackView state =
     -- XXX Fake rack for now
     div [ class "rack" ]
         (List.concat
-            [ [ assetTitle "Rack" ]
+            [ [ assetTitle <| state.clusterName ]
             , List.map
                 (switchView switchHeight)
                 (State.switchesByName state)
