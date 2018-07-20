@@ -25,7 +25,7 @@ const initializeApp = () => {
   const assetsData = JSON.parse(target.getAttribute('data-assets'));
   const app = Elm.Main.embed(target, assetsData);
 
-  app.ports.animateSwitchLayout.subscribe(animateSwitchLayout);
+  app.ports.animateSwitchLayout.subscribe(animateSwitchLayout(app));
 
   return app;
 };
@@ -51,7 +51,7 @@ const sendPositionsForElements = ({idAttr, elmDataTag, elmApp}) => {
   elmApp.ports.jsToElm.send([elmDataTag, elementIdsWithBoundingRects]);
 };
 
-const animateSwitchLayout = () => {
+const animateSwitchLayout = elmApp => () => {
   // This function gets run after Elm's `update` but before the `view`, when
   // Elm sends the `Cmd` we are subscribed to through a port.
   const flipping = new Flipping({
@@ -67,6 +67,14 @@ const animateSwitchLayout = () => {
   // us animating elements in this way, as their final positions will be the
   // ones Elm would have rendered directly without animation.
   requestAnimationFrame(() => {
+    // Send the new positions of elements so Elm has these immediately after
+    // the layout has changed (rather than requiring the viewport to otherwise
+    // change before these will be sent, e.g. waiting for the user to scroll).
+    // XXX There's a slight jump of the network diagram lines here as we render
+    // them twice in quick succession with the old and then new positions,
+    // would be nice to eliminate this.
+    sendAllPositions(elmApp)();
+
     flipping.flip();
   });
 };
