@@ -124,6 +124,6 @@ updateAssetBoundingRects currentAssets assetIdsToNewRects =
                 |> Maybe.Extra.values
                 |> TaggedDict.fromList
     in
-    TaggedDict.intersect
+    TaggedDict.union
         assetsWithNewRects
         currentAssets
