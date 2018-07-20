@@ -16,12 +16,7 @@ import View.Utils
 
 
 layout : State -> Html Msg
-layout =
-    rackView
-
-
-rackView : State -> Html Msg
-rackView state =
+layout state =
     let
         adapterHeight =
             -- Calculate the height we should display NetworkAdapters at here
