@@ -155,7 +155,9 @@ networkAdapterView viewCache adapter =
 oobView : Oob -> Html Msg
 oobView oob =
     div [ class "oob" ]
-        [ text "OOB" ]
+        [ View.Utils.assetHitBox <| State.OobId oob.id
+        , text "OOB"
+        ]
 
 
 psuView : Psu -> Html Msg

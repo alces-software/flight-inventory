@@ -69,6 +69,7 @@ type SelectableAssetId
     | ChassisId Chassis.Id
     | ServerId Server.Id
     | NetworkAdapterId NetworkAdapter.Id
+    | OobId Oob.Id
     | PsuId Psu.Id
     | GroupId Group.Id
     | NodeId Node.Id
@@ -262,6 +263,10 @@ selectedAssetData state =
                     TaggedDict.get adapterId state.networkAdapters
                         |> Maybe.map .data
 
+                OobId oobId ->
+                    TaggedDict.get oobId state.oobs
+                        |> Maybe.map .data
+
                 PsuId psuId ->
                     TaggedDict.get psuId state.psus
                         |> Maybe.map .data
@@ -316,6 +321,19 @@ selectedAssetDescription state =
                     Maybe.map
                         (PhysicalAsset.description "network adapter")
                         adapter
+
+                OobId oobId ->
+                    -- XXX Get the asset this is the OOB for and display this;
+                    -- this is slightly complex as will need to go through
+                    -- every group of assets which could have an OOB and see if
+                    -- this is referenced by one of them. Alternatively, maybe
+                    -- we should pass the asset ID rather than the OOB ID when
+                    -- an OOB is selected, as it is much simpler to find the
+                    -- OOB given an asset rather than the other way round -
+                    -- maybe should change type to `type SelectableAssetId =
+                    -- ... | OobId {a | oobId = Oob.Id}`? This would also make
+                    -- things more robust to new assets with OOBs being added.
+                    Just "OOB"
 
                 PsuId psuId ->
                     let
