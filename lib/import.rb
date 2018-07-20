@@ -61,7 +61,7 @@ class Import
   end
 
   def import_network_switches
-    import_assets_of_type(NetworkSwitch)
+    import_assets_of_type(NetworkSwitch, has_oob: true)
   end
 
   def import_chassis
@@ -81,7 +81,8 @@ class Import
       Server,
       parent_class: Chassis,
       parents_map: servers_to_chassis,
-      child_classes: [NetworkAdapter]
+      child_classes: [NetworkAdapter],
+      has_oob: true
     )
   end
 
@@ -118,7 +119,13 @@ class Import
     end
   end
 
-  def import_assets_of_type(klass, parent_class: nil, parents_map: nil, child_classes: [])
+  def import_assets_of_type(
+    klass,
+    parent_class: nil,
+    parents_map: nil,
+    child_classes: [],
+    has_oob: false
+  )
     asset_type = klass.to_s.underscore
     human_asset_type = asset_type.humanize(capitalize: false)
 
@@ -138,6 +145,14 @@ class Import
         parent_name = parents_map.fetch(name)
         parent = parent_class.find_by_name!(parent_name)
         asset_attributes.merge!(parent_type => parent)
+      end
+
+      if has_oob
+        oob_data = data.fetch('oob')
+        network_name = asset_name_from_reference(oob_data.fetch('network'))
+        network = Network.find_by_name!(network_name)
+        oob = Oob.create!(data: oob_data, network: network)
+        asset_attributes.merge!(oob: oob)
       end
 
       klass.create!(asset_attributes)

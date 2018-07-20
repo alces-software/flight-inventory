@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_16_152532) do
+ActiveRecord::Schema.define(version: 2018_07_20_151023) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -77,6 +77,8 @@ ActiveRecord::Schema.define(version: 2018_07_16_152532) do
     t.json "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "oob_id", null: false
+    t.index ["oob_id"], name: "index_network_switches_on_oob_id"
   end
 
   create_table "networks", force: :cascade do |t|
@@ -98,6 +100,14 @@ ActiveRecord::Schema.define(version: 2018_07_16_152532) do
     t.index ["server_id"], name: "index_nodes_on_server_id"
   end
 
+  create_table "oobs", force: :cascade do |t|
+    t.json "data", null: false
+    t.bigint "network_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["network_id"], name: "index_oobs_on_network_id"
+  end
+
   create_table "psus", force: :cascade do |t|
     t.string "name", null: false
     t.json "data", null: false
@@ -113,14 +123,18 @@ ActiveRecord::Schema.define(version: 2018_07_16_152532) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "chassis_id"
+    t.bigint "oob_id", null: false
     t.index ["chassis_id"], name: "index_servers_on_chassis_id"
+    t.index ["oob_id"], name: "index_servers_on_oob_id"
   end
 
   add_foreign_key "network_adapter_ports", "network_adapters"
   add_foreign_key "network_adapters", "servers"
   add_foreign_key "network_connections", "nodes"
+  add_foreign_key "network_switches", "oobs"
   add_foreign_key "nodes", "groups"
   add_foreign_key "nodes", "servers"
   add_foreign_key "psus", "chassis"
   add_foreign_key "servers", "chassis"
+  add_foreign_key "servers", "oobs"
 end
