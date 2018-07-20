@@ -3,6 +3,7 @@ module View.Physical exposing (layout)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
+import Data.Oob as Oob exposing (Oob)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
@@ -11,6 +12,7 @@ import Geometry.Networks
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Msg exposing (Msg(..))
+import Tagged.Dict as TaggedDict
 import View.Logical
 import View.Utils
 
@@ -25,7 +27,7 @@ layout state =
         (List.concat
             [ [ assetTitle <| state.clusterName ]
             , List.map
-                (switchView viewCache)
+                (switchView viewCache state)
                 (State.switchesByName state)
             , List.map
                 (chassisView viewCache state)
@@ -51,8 +53,8 @@ type alias ViewCache =
     }
 
 
-switchView : ViewCache -> NetworkSwitch -> Html Msg
-switchView viewCache switch =
+switchView : ViewCache -> State -> NetworkSwitch -> Html Msg
+switchView viewCache state switch =
     div
         [ class "network-switch"
         , View.Utils.idAttribute "data-network-switch-id" switch
@@ -61,6 +63,7 @@ switchView viewCache switch =
         ]
         [ View.Utils.assetHitBox <| State.NetworkSwitchId switch.id
         , assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
+        , networkConnectorsView viewCache state [] switch
         ]
 
 
@@ -96,24 +99,42 @@ serverView viewCache state server =
         [ class "server"
         , title <| "Server: " ++ server.name
         ]
-        (List.concat
-            [ [ View.Utils.assetHitBox <| State.ServerId server.id
-              , assetTitle <| (PhysicalAsset.fullModel server ++ " server")
-              ]
-            , [ div [ class "network-adapters" ]
-                    (List.map
-                        (networkAdapterView viewCache)
-                        (State.serverNetworkAdaptersByName state server)
-                    )
-              ]
-            , [ div [ class "nodes" ]
-                    (List.map
-                        View.Logical.nodeView
-                        (State.serverNodesByName state server)
-                    )
-              ]
-            ]
-        )
+        [ View.Utils.assetHitBox <| State.ServerId server.id
+        , assetTitle <| (PhysicalAsset.fullModel server ++ " server")
+        , networkConnectorsView
+            viewCache
+            state
+            (State.serverNetworkAdaptersByName state server)
+            server
+        , div [ class "nodes" ]
+            (List.map
+                View.Logical.nodeView
+                (State.serverNodesByName state server)
+            )
+        ]
+
+
+networkConnectorsView :
+    ViewCache
+    -> State
+    -> List NetworkAdapter
+    -> { a | oobId : Oob.Id }
+    -> Html Msg
+networkConnectorsView viewCache state adapters { oobId } =
+    let
+        adapters_ =
+            List.map (networkAdapterView viewCache) adapters
+
+        oob =
+            case TaggedDict.get oobId state.oobs of
+                Just oob ->
+                    oobView oob
+
+                Nothing ->
+                    text ""
+    in
+    div [ class "network-connectors" ]
+        (List.concat [ adapters_, [ oob ] ])
 
 
 networkAdapterView : ViewCache -> NetworkAdapter -> Html Msg
@@ -129,6 +150,12 @@ networkAdapterView viewCache adapter =
         [ View.Utils.assetHitBox <| State.NetworkAdapterId adapter.id
         , text "N"
         ]
+
+
+oobView : Oob -> Html Msg
+oobView oob =
+    div [ class "oob" ]
+        [ text "OOB" ]
 
 
 psuView : Psu -> Html Msg

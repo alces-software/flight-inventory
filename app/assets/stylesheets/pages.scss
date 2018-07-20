@@ -179,12 +179,6 @@ html {
   display: grid;
   grid-template-columns: 50% 50%;
 
-  .network-adapters {
-    grid-column-start: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
   .nodes {
     grid-column-start: 2;
   }
@@ -200,11 +194,28 @@ html {
   background-color: coral;
 }
 
-.network-adapter {
+// Wrapper for things which can be connected to a Network, i.e. NetworkAdapters
+// and Oobs.
+.network-connectors {
+  grid-column-start: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin network-connector {
   @include asset;
   display: inline-block;
   width: 50px;
+}
+
+.network-adapter {
+  @include network-connector;
   background-color: lightblue;
+}
+
+.oob {
+  @include network-connector;
+  background-color: lightyellow;
 }
 
 .group {
