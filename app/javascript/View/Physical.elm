@@ -18,48 +18,54 @@ import View.Utils
 layout : State -> Html Msg
 layout state =
     let
-        adapterHeight =
-            -- Calculate the height we should display NetworkAdapters at here
-            -- and thread this through, rather than at point of use, as the
-            -- calculation for what this should be is somewhat time consuming
-            -- and gives the same value for every adapter; this is fine if we
-            -- do it once here but is wasteful and noticeably slows things down
-            -- if we do it for every adapter.
-            Geometry.Networks.adapterHeight state
-
-        switchHeight =
-            -- Do similar to `adapterHeight` here as well, although probably
-            -- less important here since most likely far fewer switches.
-            Geometry.Networks.switchHeight state
+        viewCache =
+            initializeViewCache state
     in
     div [ class "cluster" ]
         (List.concat
             [ [ assetTitle <| state.clusterName ]
             , List.map
-                (switchView switchHeight)
+                (switchView viewCache)
                 (State.switchesByName state)
             , List.map
-                (chassisView adapterHeight state)
+                (chassisView viewCache state)
                 (State.chassisByName state)
             ]
         )
 
 
-switchView : Int -> NetworkSwitch -> Html Msg
-switchView switchHeight switch =
+initializeViewCache : State -> ViewCache
+initializeViewCache state =
+    -- We calculate these values needed in many places once up-front and then
+    -- thread this record through as needed, rather than repeating this many
+    -- times at point of use, since doing that is somewhat time consuming and
+    -- noticeably slows things down.
+    { adapterHeight = Geometry.Networks.adapterHeight state
+    , switchHeight = Geometry.Networks.switchHeight state
+    }
+
+
+type alias ViewCache =
+    { adapterHeight : Int
+    , switchHeight : Int
+    }
+
+
+switchView : ViewCache -> NetworkSwitch -> Html Msg
+switchView viewCache switch =
     div
         [ class "network-switch"
         , View.Utils.idAttribute "data-network-switch-id" switch
         , title ("Network switch: " ++ switch.name)
-        , style [ ( "height", toString switchHeight ++ "px" ) ]
+        , style [ ( "height", toString viewCache.switchHeight ++ "px" ) ]
         ]
         [ View.Utils.assetHitBox <| State.NetworkSwitchId switch.id
         , assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
         ]
 
 
-chassisView : Int -> State -> Chassis -> Html Msg
-chassisView adapterHeight state chassis =
+chassisView : ViewCache -> State -> Chassis -> Html Msg
+chassisView viewCache state chassis =
     div
         [ class "chassis"
         , title ("Chassis: " ++ chassis.name)
@@ -70,7 +76,7 @@ chassisView adapterHeight state chassis =
               ]
             , [ div
                     [ class "servers" ]
-                    (List.map (serverView adapterHeight state)
+                    (List.map (serverView viewCache state)
                         (State.chassisServersByName state chassis)
                     )
               ]
@@ -84,8 +90,8 @@ chassisView adapterHeight state chassis =
         )
 
 
-serverView : Int -> State -> Server -> Html Msg
-serverView adapterHeight state server =
+serverView : ViewCache -> State -> Server -> Html Msg
+serverView viewCache state server =
     div
         [ class "server"
         , title <| "Server: " ++ server.name
@@ -96,7 +102,7 @@ serverView adapterHeight state server =
               ]
             , [ div [ class "network-adapters" ]
                     (List.map
-                        (networkAdapterView adapterHeight)
+                        (networkAdapterView viewCache)
                         (State.serverNetworkAdaptersByName state server)
                     )
               ]
@@ -110,15 +116,15 @@ serverView adapterHeight state server =
         )
 
 
-networkAdapterView : Int -> NetworkAdapter -> Html Msg
-networkAdapterView adapterHeight adapter =
+networkAdapterView : ViewCache -> NetworkAdapter -> Html Msg
+networkAdapterView viewCache adapter =
     div
         [ class "network-adapter"
         , View.Utils.idAttribute "data-network-adapter-id" adapter
         , title <|
             String.join " "
                 [ "Network adapter:", PhysicalAsset.fullModel adapter, adapter.name ]
-        , style [ ( "height", toString adapterHeight ++ "px" ) ]
+        , style [ ( "height", toString viewCache.adapterHeight ++ "px" ) ]
         ]
         [ View.Utils.assetHitBox <| State.NetworkAdapterId adapter.id
         , text "N"
