@@ -30,6 +30,7 @@ import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPor
 import Data.NetworkConnection as NetworkConnection exposing (NetworkConnection)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.Node as Node exposing (Node)
+import Data.Oob as Oob exposing (Oob)
 import Data.PhysicalAsset as PhysicalAsset
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
@@ -54,6 +55,7 @@ type alias State =
     , networkConnections : Dict Int NetworkConnection
     , networks : TaggedDict Network.IdTag Int Network
     , networkSwitches : TaggedDict NetworkSwitch.IdTag Int NetworkSwitch
+    , oobs : TaggedDict Oob.IdTag Int Oob
     , nodes : TaggedDict Node.IdTag Int Node
     , groups : TaggedDict Group.IdTag Int Group
     , dataJsonTreeState : JsonTree.State
@@ -90,6 +92,7 @@ decoder =
         |> P.required "networkConnections" (assetDictDecoder NetworkConnection.decoder)
         |> P.required "networks" (taggedAssetDictDecoder Network.decoder)
         |> P.required "networkSwitches" (taggedAssetDictDecoder NetworkSwitch.decoder)
+        |> P.required "oobs" (taggedAssetDictDecoder Oob.decoder)
         |> P.required "nodes" (taggedAssetDictDecoder Node.decoder)
         |> P.required "groups" (taggedAssetDictDecoder Group.decoder)
         |> P.hardcoded JsonTree.defaultState
