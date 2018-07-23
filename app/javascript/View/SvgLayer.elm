@@ -8,7 +8,6 @@ import Geometry.Line as Line exposing (Line)
 import Geometry.Networks
 import Geometry.Point as Point exposing (Point)
 import Html exposing (Html)
-import List.Extra
 import Maybe.Extra
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
@@ -79,76 +78,20 @@ drawExternalNetworkAlongAxis :
     -> List (Svg msg)
 drawExternalNetworkAlongAxis state axis network connections =
     let
-        switchLines =
-            List.map
-                (Geometry.Networks.switchConnectionPosition state network
-                    >> lineForAsset trunkLineWidth
-                )
-                switches
-                |> Maybe.Extra.values
-
-        switches =
-            List.map .networkSwitch connections
-                |> Asset.uniqueById
-
-        adapterPortLines =
-            List.map (\( _, l ) -> l) connectionsWithAdapterPortLines
-
-        connectionsWithAdapterPortLines : List ( NetworkConnection.Denormalized, Line )
-        connectionsWithAdapterPortLines =
-            List.map
-                (\connection ->
-                    Maybe.map
-                        (\line -> ( connection, line ))
-                        (lineForAsset standardLineWidth
-                            -- XXX Could change `adapterPortPosition` to not
-                            -- independently find NetworkAdapter, since is
-                            -- already available here in `connection`.
-                            (Geometry.Networks.adapterPortPosition
-                                state
-                                connection.networkAdapterPort
-                            )
-                        )
-                )
-                connections
-                |> Maybe.Extra.values
-
-        oobLines =
-            List.map lineForOob oobs
-                |> Maybe.Extra.values
-
-        lineForOob =
-            Geometry.Networks.oobConnectionPosition >> lineForAsset standardLineWidth
-
-        oobs =
-            TaggedDict.values state.oobs
-                |> List.filter (.networkId >> (==) network.id)
-
-        lineForAsset : Int -> Maybe Point -> Maybe Line
-        lineForAsset width start =
-            Maybe.map
-                (\s -> Line s (endPointFromStart s) width)
-                start
-
-        endPointFromStart =
-            \start -> { x = axis, y = start.y }
-
         horizontalLines =
-            List.concat [ switchLines, adapterPortLines, oobLines ]
+            List.concat
+                [ externalNetworkSwitchLines state axis network connections
+                , adapterPortLines
+                , externalNetworkOobLines state axis network
+                ]
+
+        ( adapterPortLines, adapterPortLabels ) =
+            externalNetworkAdapterPortLinesAndLabels state axis network connections
 
         endPoints =
             List.map .end horizontalLines
-
-        maybeTopPoint =
-            List.Extra.minimumBy .y endPoints
-
-        maybeBottomPoint =
-            List.Extra.maximumBy .y endPoints
-
-        trunkLineWidth =
-            standardLineWidth * 2
     in
-    case ( maybeTopPoint, maybeBottomPoint ) of
+    case ( Point.top endPoints, Point.bottom endPoints ) of
         ( Just top, Just bottom ) ->
             let
                 networkAxisLine =
@@ -167,40 +110,11 @@ drawExternalNetworkAlongAxis state axis network connections =
                     networkAxisLine :: horizontalLines
 
                 networkLabel =
-                    drawLabel
+                    drawNetworkLabel
+                        network
                         (Point top.x (top.y - 20))
                         network.name
                         "font-size: 20px;"
-
-                adapterPortLabels =
-                    List.map adapterPortLabel connectionsWithAdapterPortLines
-
-                adapterPortLabel : ( NetworkConnection.Denormalized, Line ) -> Svg msg
-                adapterPortLabel ( connection, line ) =
-                    let
-                        labelPosition =
-                            { x = line.start.x - 70
-                            , y = line.start.y - 5
-                            }
-                    in
-                    drawLabel
-                        labelPosition
-                        connection.networkAdapterPort.interface
-                        "font-size: 12px;"
-
-                drawLabel : Point -> String -> String -> Svg msg
-                drawLabel =
-                    \point label styles ->
-                        text_
-                            [ x <| toString point.x
-                            , y <| toString point.y
-                            , Svg.Attributes.style <|
-                                "fill: "
-                                    ++ Network.colour network
-                                    ++ "; "
-                                    ++ styles
-                            ]
-                            [ text label ]
             in
             List.concat
                 [ List.map (drawNetworkLine network) allLines
@@ -212,6 +126,103 @@ drawExternalNetworkAlongAxis state axis network connections =
             -- If we don't have a top and a bottom point then we can't have any
             -- points in the network at all, so nothing to draw.
             []
+
+
+externalNetworkSwitchLines :
+    State
+    -> Float
+    -> Network
+    -> List NetworkConnection.Denormalized
+    -> List Line
+externalNetworkSwitchLines state axis network connections =
+    let
+        switches =
+            List.map .networkSwitch connections
+                |> Asset.uniqueById
+    in
+    List.map
+        (Geometry.Networks.switchConnectionPosition state network
+            >> externalNetworkConnectionLine axis trunkLineWidth
+        )
+        switches
+        |> Maybe.Extra.values
+
+
+externalNetworkOobLines : State -> Float -> Network -> List Line
+externalNetworkOobLines state axis network =
+    let
+        lineForOob =
+            Geometry.Networks.oobConnectionPosition
+                >> externalNetworkConnectionLine axis standardLineWidth
+
+        oobs =
+            TaggedDict.values state.oobs
+                |> List.filter (.networkId >> (==) network.id)
+    in
+    List.map lineForOob oobs
+        |> Maybe.Extra.values
+
+
+externalNetworkAdapterPortLinesAndLabels :
+    State
+    -> Float
+    -> Network
+    -> List NetworkConnection.Denormalized
+    -> ( List Line, List (Svg msg) )
+externalNetworkAdapterPortLinesAndLabels state axis network connections =
+    let
+        adapterPortLines =
+            List.map (\( _, l ) -> l) connectionsWithAdapterPortLines
+
+        connectionsWithAdapterPortLines : List ( NetworkConnection.Denormalized, Line )
+        connectionsWithAdapterPortLines =
+            List.map
+                (\connection ->
+                    Maybe.map
+                        (\line -> ( connection, line ))
+                        (externalNetworkConnectionLine axis
+                            standardLineWidth
+                            -- XXX Could change `adapterPortPosition` to not
+                            -- independently find NetworkAdapter, since is
+                            -- already available here in `connection`.
+                            (Geometry.Networks.adapterPortPosition
+                                state
+                                connection.networkAdapterPort
+                            )
+                        )
+                )
+                connections
+                |> Maybe.Extra.values
+
+        adapterPortLabels =
+            List.map adapterPortLabel connectionsWithAdapterPortLines
+
+        adapterPortLabel : ( NetworkConnection.Denormalized, Line ) -> Svg msg
+        adapterPortLabel ( connection, line ) =
+            let
+                labelPosition =
+                    { x = line.start.x - 70
+                    , y = line.start.y - 5
+                    }
+            in
+            drawNetworkLabel
+                network
+                labelPosition
+                connection.networkAdapterPort.interface
+                "font-size: 12px;"
+    in
+    ( adapterPortLines, adapterPortLabels )
+
+
+externalNetworkConnectionLine : Float -> Int -> Maybe Point -> Maybe Line
+externalNetworkConnectionLine axis width maybeStart =
+    let
+        endPointFromStart =
+            \start -> { x = axis, y = start.y }
+    in
+    Maybe.map
+        (\s -> Line s (endPointFromStart s) width)
+        maybeStart
 
 
 drawInternalNetwork :
@@ -261,6 +272,25 @@ drawNetworkLine network line_ =
         []
 
 
+drawNetworkLabel : Network -> Point -> String -> String -> Svg msg
+drawNetworkLabel network point label styles =
+    text_
+        [ x <| toString point.x
+        , y <| toString point.y
+        , Svg.Attributes.style <|
+            "fill: "
+                ++ Network.colour network
+                ++ "; "
+                ++ styles
+        ]
+        [ text label ]
+
+
 standardLineWidth : Int
 standardLineWidth =
     2
+
+
+trunkLineWidth : Int
+trunkLineWidth =
+    standardLineWidth * 2
