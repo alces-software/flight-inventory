@@ -4,6 +4,7 @@ module Geometry.Networks
         , adapterPortPosition
         , axisForNetwork
         , nodeConnectionPosition
+        , oobConnectionPosition
         , switchConnectionPosition
         , switchHeight
         )
@@ -12,6 +13,7 @@ import Data.Network as Network exposing (Network)
 import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.Node exposing (Node)
+import Data.Oob exposing (Oob)
 import Data.State as State exposing (State)
 import Geometry.BoundingRect as BoundingRect
 import Geometry.Point exposing (Point)
@@ -119,6 +121,22 @@ nodeConnectionPosition state network node =
             BoundingRect.connectionPoint network connectedNetworks
     in
     Maybe.map connectionPoint node.boundingRect
+        |> Maybe.Extra.join
+
+
+oobConnectionPosition : Oob -> Maybe Point
+oobConnectionPosition oob =
+    let
+        connectionPoint =
+            -- It should currently always be the case that every OOB will only
+            -- have a single connection to a single Network; if this ever
+            -- changes though we should change this to pass the Network we're
+            -- connecting here, as well as all Networks connected to this OOB
+            -- (similar to functions above), otherwise all Network
+            -- connections for the OOB will be drawn on top of each other.
+            BoundingRect.connectionPoint oob [ oob ]
+    in
+    Maybe.map connectionPoint oob.boundingRect
         |> Maybe.Extra.join
 
 

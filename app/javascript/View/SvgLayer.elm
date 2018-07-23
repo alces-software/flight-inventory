@@ -12,6 +12,7 @@ import List.Extra
 import Maybe.Extra
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Tagged.Dict as TaggedDict
 
 
 view : State -> Html msg
@@ -112,6 +113,17 @@ drawExternalNetworkAlongAxis state axis network connections =
                 connections
                 |> Maybe.Extra.values
 
+        oobLines =
+            List.map lineForOob oobs
+                |> Maybe.Extra.values
+
+        lineForOob =
+            Geometry.Networks.oobConnectionPosition >> lineForAsset standardLineWidth
+
+        oobs =
+            TaggedDict.values state.oobs
+                |> List.filter (.networkId >> (==) network.id)
+
         lineForAsset : Int -> Maybe Point -> Maybe Line
         lineForAsset width start =
             Maybe.map
@@ -122,7 +134,7 @@ drawExternalNetworkAlongAxis state axis network connections =
             \start -> { x = axis, y = start.y }
 
         horizontalLines =
-            List.concat [ switchLines, adapterPortLines ]
+            List.concat [ switchLines, adapterPortLines, oobLines ]
 
         endPoints =
             List.map .end horizontalLines
