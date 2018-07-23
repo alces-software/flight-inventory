@@ -144,14 +144,6 @@ drawExternalNetworkAlongAxis state axis network connections =
 
         maybeBottomPoint =
             List.Extra.maximumBy .y endPoints
-                -- Offset the bottom point's Y coord slightly so it lines up
-                -- neatly with the bottom-most horizontal line (without this it
-                -- extends slightly beyond this, due to our use of
-                -- `strokeLinecap "square"`).
-                |> Maybe.map (\p -> Point p.x (p.y - bottomPointOffset))
-
-        bottomPointOffset =
-            toFloat standardLineWidth / 2
 
         trunkLineWidth =
             standardLineWidth * 2
@@ -160,12 +152,16 @@ drawExternalNetworkAlongAxis state axis network connections =
         ( Just top, Just bottom ) ->
             let
                 networkAxisLine =
-                    -- Slightly shift Y-coordinate of top to ensure top of line
-                    -- lines up flush with top line drawn from axis.
-                    { start = { x = top.x, y = top.y + 1 }
-                    , end = bottom
+                    -- Slightly shift Y-coordinates of top and bottom of axis
+                    -- line so these line up flush with top and bottom-most
+                    -- lines drawn from axis.
+                    { start = { x = top.x, y = top.y + axisLineOffset }
+                    , end = { x = bottom.x, y = bottom.y - axisLineOffset }
                     , width = trunkLineWidth
                     }
+
+                axisLineOffset =
+                    toFloat standardLineWidth / 2
 
                 allLines =
                     networkAxisLine :: horizontalLines
