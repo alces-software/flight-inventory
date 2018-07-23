@@ -154,7 +154,10 @@ networkAdapterView viewCache adapter =
 
 oobView : Oob -> Html Msg
 oobView oob =
-    div [ class "oob" ]
+    div
+        [ View.Utils.idAttribute "data-oob-id" oob
+        , class "oob"
+        ]
         [ View.Utils.assetHitBox <| State.OobId oob.id
         , text "OOB"
         ]

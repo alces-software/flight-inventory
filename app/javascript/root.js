@@ -35,6 +35,7 @@ const sendAllPositions = elmApp => () => {
     {idAttr: 'data-network-adapter-id', elmDataTag: 'networkAdapterPositions'},
     {idAttr: 'data-network-switch-id', elmDataTag: 'networkSwitchPositions'},
     {idAttr: 'data-node-id', elmDataTag: 'nodePositions'},
+    {idAttr: 'data-oob-id', elmDataTag: 'oobPositions'},
   ].forEach(args => sendPositionsForElements({...args, elmApp: elmApp}));
 };
 

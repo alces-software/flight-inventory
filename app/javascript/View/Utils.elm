@@ -1,6 +1,6 @@
 module View.Utils exposing (..)
 
-import Data.Asset exposing (Asset)
+import Data.Asset as Asset
 import Data.State as State
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -11,7 +11,7 @@ import Tagged
 
 {-| Attribute to display asset ID in DOM, to be picked up in JS.
 -}
-idAttribute : String -> Asset idTag a -> Html.Attribute msg
+idAttribute : String -> { a | id : Asset.Id idTag } -> Html.Attribute msg
 idAttribute dataAttr { id } =
     Tagged.untag id
         |> toString
