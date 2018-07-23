@@ -6,7 +6,6 @@ module Geometry.Networks
         , nodeConnectionPosition
         , oobConnectionPosition
         , switchConnectionPosition
-        , switchHeight
         )
 
 import Data.Network as Network exposing (Network)
@@ -33,13 +32,6 @@ adapterHeight state =
     connectedRectHeight
         (TaggedDict.values state.networkAdapters)
         connectionsForAdapter
-
-
-switchHeight : State -> Int
-switchHeight state =
-    connectedRectHeight
-        (TaggedDict.values state.networkSwitches)
-        (State.networksConnectedToSwitch state)
 
 
 {-|

@@ -43,13 +43,11 @@ initializeViewCache state =
     -- times at point of use, since doing that is somewhat time consuming and
     -- noticeably slows things down.
     { adapterHeight = Geometry.Networks.adapterHeight state
-    , switchHeight = Geometry.Networks.switchHeight state
     }
 
 
 type alias ViewCache =
     { adapterHeight : Int
-    , switchHeight : Int
     }
 
 
@@ -59,7 +57,6 @@ switchView viewCache state switch =
         [ class "network-switch"
         , View.Utils.idAttribute "data-network-switch-id" switch
         , title ("Network switch: " ++ switch.name)
-        , style [ ( "height", toString viewCache.switchHeight ++ "px" ) ]
         ]
         [ View.Utils.assetHitBox <| State.NetworkSwitchId switch.id
         , assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")

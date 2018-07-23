@@ -148,6 +148,16 @@ html {
 
 .network-switch {
   @include asset-in-rack;
+
+  .oob {
+    // This just exists to make switches take up a bit more vertical space, so
+    // that there is (hopefully) enough room to draw all networks connected to
+    // the switch, and without any of them overlapping with the network
+    // connection line for the switch's OOB. This is a little bit hacky though,
+    // and lines could still overlap/be too bunched up if a switch ever has too
+    // many networks connected to it in future.
+    margin-top: 30px;
+  }
 }
 
 .chassis {
