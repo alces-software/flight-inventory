@@ -171,47 +171,53 @@ externalNetworkAdapterPortLinesAndLabels :
     -> ( List Line, List (Svg msg) )
 externalNetworkAdapterPortLinesAndLabels state axis network connections =
     let
-        adapterPortLines =
-            List.map (\( _, l ) -> l) connectionsWithAdapterPortLines
+        lineWithConnection =
+            \connection ->
+                Maybe.map
+                    (\line -> ( line, connection ))
+                    (lineForConnection connection)
 
-        connectionsWithAdapterPortLines : List ( NetworkConnection.Denormalized, Line )
-        connectionsWithAdapterPortLines =
-            List.map
-                (\connection ->
-                    Maybe.map
-                        (\line -> ( connection, line ))
-                        (externalNetworkConnectionLine axis
-                            standardLineWidth
-                            -- XXX Could change `adapterPortPosition` to not
-                            -- independently find NetworkAdapter, since is
-                            -- already available here in `connection`.
-                            (Geometry.Networks.adapterPortPosition
-                                state
-                                connection.networkAdapterPort
-                            )
-                        )
-                )
-                connections
-                |> Maybe.Extra.values
+        lineForConnection =
+            \connection ->
+                externalNetworkConnectionLine axis
+                    standardLineWidth
+                    -- XXX Could change `adapterPortPosition` to not
+                    -- independently find NetworkAdapter, since is
+                    -- already available here in `connection`.
+                    (Geometry.Networks.adapterPortPosition
+                        state
+                        connection.networkAdapterPort
+                    )
 
-        adapterPortLabels =
-            List.map adapterPortLabel connectionsWithAdapterPortLines
+        lineWithLabel =
+            \( line, connection ) ->
+                let
+                    label =
+                        drawNetworkLabel
+                            network
+                            labelPosition
+                            connection.networkAdapterPort.interface
+                            "font-size: 12px;"
 
-        adapterPortLabel : ( NetworkConnection.Denormalized, Line ) -> Svg msg
-        adapterPortLabel ( connection, line ) =
-            let
-                labelPosition =
-                    { x = line.start.x - 70
-                    , y = line.start.y - 5
-                    }
-            in
-            drawNetworkLabel
-                network
-                labelPosition
-                connection.networkAdapterPort.interface
-                "font-size: 12px;"
+                    labelPosition =
+                        { x = line.start.x - 70
+                        , y = line.start.y - 5
+                        }
+                in
+                ( line, label )
+
+        linesAndLabelsFromLinesWithLabels :
+            List ( Line, Svg msg )
+            -> ( List Line, List (Svg msg) )
+        linesAndLabelsFromLinesWithLabels linesWithLabels =
+            ( List.map Tuple.first linesWithLabels
+            , List.map Tuple.second linesWithLabels
+            )
     in
-    ( adapterPortLines, adapterPortLabels )
+    List.map lineWithConnection connections
+        |> Maybe.Extra.values
+        |> List.map lineWithLabel
+        |> linesAndLabelsFromLinesWithLabels
 
 
 externalNetworkConnectionLine : Float -> Int -> Maybe Point -> Maybe Line
