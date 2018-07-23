@@ -160,7 +160,9 @@ drawExternalNetworkAlongAxis state axis network connections =
         ( Just top, Just bottom ) ->
             let
                 networkAxisLine =
-                    { start = top
+                    -- Slightly shift Y-coordinate of top to ensure top of line
+                    -- lines up flush with top line drawn from axis.
+                    { start = { x = top.x, y = top.y + 1 }
                     , end = bottom
                     , width = trunkLineWidth
                     }
