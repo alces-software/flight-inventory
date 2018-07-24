@@ -5,11 +5,18 @@ class Import
   include Rake::DSL
 
   CONTROLLER_IP = '10.101.0.46'
-  CONTROLLER_PASSWORD = ENV.fetch('ALCES_INSECURE_PASSWORD')
 
-  def self.run
-    Net::SSH.start(CONTROLLER_IP, 'root', password: CONTROLLER_PASSWORD) do |ssh|
-      self.new(ssh).run
+  class << self
+    def run
+      Net::SSH.start(CONTROLLER_IP, 'root', password: controller_password) do |ssh|
+        self.new(ssh).run
+      end
+    end
+
+    private
+
+    def controller_password
+      ENV.fetch('ALCES_INSECURE_PASSWORD')
     end
   end
 
