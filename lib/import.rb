@@ -8,7 +8,9 @@ class Import
 
   class << self
     def run
-      Net::SSH.start(CONTROLLER_IP, 'root', password: controller_password) do |ssh|
+      Net::SSH.start(
+        CONTROLLER_IP, 'root', password: controller_password
+      ) do |ssh|
         self.new(ssh).run
       end
     end
