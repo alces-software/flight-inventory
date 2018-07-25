@@ -36,6 +36,7 @@ class Import
     # Physical assets.
     import_networks
     import_network_switches
+    import_pdus
     chassis_maps = import_chassis
     import_psus(chassis_maps[Psu])
     server_maps = import_servers(chassis_maps[Server])
@@ -73,6 +74,10 @@ class Import
 
   def import_network_switches
     import_assets_of_type(NetworkSwitch, has_oob: true)
+  end
+
+  def import_pdus
+    import_assets_of_type(Pdu, has_oob: true)
   end
 
   def import_chassis

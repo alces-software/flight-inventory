@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_20_151023) do
+ActiveRecord::Schema.define(version: 2018_07_25_160114) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -108,6 +108,15 @@ ActiveRecord::Schema.define(version: 2018_07_20_151023) do
     t.index ["network_id"], name: "index_oobs_on_network_id"
   end
 
+  create_table "pdus", force: :cascade do |t|
+    t.string "name", null: false
+    t.json "data", null: false
+    t.bigint "oob_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["oob_id"], name: "index_pdus_on_oob_id"
+  end
+
   create_table "psus", force: :cascade do |t|
     t.string "name", null: false
     t.json "data", null: false
@@ -134,6 +143,7 @@ ActiveRecord::Schema.define(version: 2018_07_20_151023) do
   add_foreign_key "network_switches", "oobs"
   add_foreign_key "nodes", "groups"
   add_foreign_key "nodes", "servers"
+  add_foreign_key "pdus", "oobs"
   add_foreign_key "psus", "chassis"
   add_foreign_key "servers", "chassis"
   add_foreign_key "servers", "oobs"

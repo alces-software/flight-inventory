@@ -12,6 +12,7 @@ class Oob < ApplicationRecord
   # XXX Validate precisely one of these relations is present here?
   has_one :server
   has_one :network_switch
+  has_one :pdu
 
   belongs_to :network
 end
