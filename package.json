@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "@rails/webpacker": "3.5",
+    "debounce": "^1.1.0",
     "elm": "^0.18.0",
     "elm-webpack-loader": "^4.5.0",
     "flipping": "^1.0.0"

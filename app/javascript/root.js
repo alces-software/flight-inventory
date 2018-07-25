@@ -1,3 +1,4 @@
+import debounce from 'debounce';
 import Flipping from 'flipping/dist/flipping.web';
 
 import Elm from 'Main';
@@ -5,7 +6,10 @@ import Elm from 'Main';
 const initialize = () => {
   const elmApp = initializeApp();
 
-  const handleViewportChange = sendAllPositions(elmApp);
+  // Debounce sending element positions with short wait when viewport changes,
+  // to avoid spamming Elm app with many new position messages in quick
+  // succession when e.g. user scrolls, causing degraded performance.
+  const handleViewportChange = debounce(sendAllPositions(elmApp), 50);
 
   // Slightly arbitrary tiny wait, after which the app should (hopefully) have
   // initially rendered, before we send the initial positions of elements to
