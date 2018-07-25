@@ -160,6 +160,10 @@ html {
   }
 }
 
+.pdu {
+  @include asset-in-rack;
+}
+
 .chassis {
   @include asset-in-rack;
   display: grid;

@@ -4,6 +4,7 @@ import Data.Chassis as Chassis exposing (Chassis)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
 import Data.Oob as Oob exposing (Oob)
+import Data.Pdu as Pdu exposing (Pdu)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
@@ -29,6 +30,9 @@ layout state =
             , List.map
                 (switchView viewCache state)
                 (State.switchesByName state)
+            , List.map
+                (pduView viewCache state)
+                (State.pdusByName state)
             , List.map
                 (chassisView viewCache state)
                 (State.chassisByName state)
@@ -61,6 +65,18 @@ switchView viewCache state switch =
         [ View.Utils.assetHitBox <| State.NetworkSwitchId switch.id
         , assetTitle <| (PhysicalAsset.fullModel switch ++ " switch")
         , networkConnectorsView viewCache state [] switch
+        ]
+
+
+pduView : ViewCache -> State -> Pdu -> Html Msg
+pduView viewCache state pdu =
+    div
+        [ class "pdu"
+        , title ("PDU: " ++ pdu.name)
+        ]
+        [ View.Utils.assetHitBox <| State.PduId pdu.id
+        , assetTitle <| (PhysicalAsset.fullModel pdu ++ " PDU")
+        , networkConnectorsView viewCache state [] pdu
         ]
 
 

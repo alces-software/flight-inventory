@@ -13,6 +13,7 @@ module Data.State
         , networksByName
         , networksConnectedToNode
         , networksConnectedToSwitch
+        , pdusByName
         , portsForAdapter
         , selectedAssetData
         , selectedAssetDescription
@@ -31,6 +32,7 @@ import Data.NetworkConnection as NetworkConnection exposing (NetworkConnection)
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.Node as Node exposing (Node)
 import Data.Oob as Oob exposing (Oob)
+import Data.Pdu as Pdu exposing (Pdu)
 import Data.PhysicalAsset as PhysicalAsset
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
@@ -48,6 +50,7 @@ type alias State =
     , chassis : TaggedDict Chassis.IdTag Int Chassis
     , servers : TaggedDict Server.IdTag Int Server
     , psus : TaggedDict Psu.IdTag Int Psu
+    , pdus : TaggedDict Pdu.IdTag Int Pdu
     , networkAdapters : TaggedDict NetworkAdapter.IdTag Int NetworkAdapter
     , networkAdapterPorts : TaggedDict NetworkAdapterPort.IdTag Int NetworkAdapterPort
 
@@ -71,6 +74,7 @@ type SelectableAssetId
     | NetworkAdapterId NetworkAdapter.Id
     | OobId Oob.Id
     | PsuId Psu.Id
+    | PduId Pdu.Id
     | GroupId Group.Id
     | NodeId Node.Id
 
@@ -88,6 +92,7 @@ decoder =
         |> P.required "chassis" (taggedAssetDictDecoder Chassis.decoder)
         |> P.required "servers" (taggedAssetDictDecoder Server.decoder)
         |> P.required "psus" (taggedAssetDictDecoder Psu.decoder)
+        |> P.required "pdus" (taggedAssetDictDecoder Pdu.decoder)
         |> P.required "networkAdapters" (taggedAssetDictDecoder NetworkAdapter.decoder)
         |> P.required "networkAdapterPorts" (taggedAssetDictDecoder NetworkAdapterPort.decoder)
         |> P.required "networkConnections" (assetDictDecoder NetworkConnection.decoder)
@@ -160,6 +165,11 @@ chassisByName state =
 switchesByName : State -> List NetworkSwitch
 switchesByName state =
     nameOrderedValues state.networkSwitches
+
+
+pdusByName : State -> List Pdu
+pdusByName state =
+    nameOrderedValues state.pdus
 
 
 networksByName : State -> List Network
@@ -271,6 +281,10 @@ selectedAssetData state =
                     TaggedDict.get psuId state.psus
                         |> Maybe.map .data
 
+                PduId pduId ->
+                    TaggedDict.get pduId state.pdus
+                        |> Maybe.map .data
+
                 GroupId groupId ->
                     TaggedDict.get groupId state.groups
                         |> Maybe.map .data
@@ -343,6 +357,15 @@ selectedAssetDescription state =
                     Maybe.map
                         (PhysicalAsset.description "PSU")
                         psu
+
+                PduId pduId ->
+                    let
+                        pdu =
+                            TaggedDict.get pduId state.pdus
+                    in
+                    Maybe.map
+                        (PhysicalAsset.description "PDU")
+                        pdu
 
                 GroupId groupId ->
                     let
