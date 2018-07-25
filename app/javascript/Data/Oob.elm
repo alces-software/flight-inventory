@@ -1,4 +1,4 @@
-module Data.Oob exposing (Id, IdTag, Oob, decoder)
+module Data.Oob exposing (HasOob, Id, IdTag, Oob, decoder)
 
 import Data.Asset as Asset
 import Data.Network as Network
@@ -13,6 +13,10 @@ type alias Oob =
         , data : D.Value
         , networkId : Network.Id
         }
+
+
+type alias HasOob a =
+    { a | oobId : Id }
 
 
 type alias Id =

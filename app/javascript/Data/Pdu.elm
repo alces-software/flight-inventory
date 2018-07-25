@@ -1,16 +1,14 @@
 module Data.Pdu exposing (Id, IdTag, Pdu, decoder)
 
 import Data.Asset as Asset
-import Data.Oob as Oob
+import Data.Oob as Oob exposing (HasOob)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 
 
 type alias Pdu =
-    PhysicalAsset IdTag
-        { oobId : Oob.Id
-        }
+    HasOob (PhysicalAsset IdTag {})
 
 
 type alias Id =

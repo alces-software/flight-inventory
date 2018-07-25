@@ -3,7 +3,7 @@ module View.Physical exposing (layout)
 import Data.Chassis as Chassis exposing (Chassis)
 import Data.NetworkAdapter exposing (NetworkAdapter)
 import Data.NetworkSwitch exposing (NetworkSwitch)
-import Data.Oob as Oob exposing (Oob)
+import Data.Oob as Oob exposing (HasOob, Oob)
 import Data.Pdu as Pdu exposing (Pdu)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
@@ -131,7 +131,7 @@ networkConnectorsView :
     ViewCache
     -> State
     -> List NetworkAdapter
-    -> { a | oobId : Oob.Id }
+    -> HasOob a
     -> Html Msg
 networkConnectorsView viewCache state adapters { oobId } =
     let

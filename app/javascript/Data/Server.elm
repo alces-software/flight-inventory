@@ -2,17 +2,14 @@ module Data.Server exposing (Id, IdTag, Server, decoder)
 
 import Data.Asset as Asset
 import Data.Chassis as Chassis
-import Data.Oob as Oob
+import Data.Oob as Oob exposing (HasOob)
 import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Json.Decode as D
 import Json.Decode.Pipeline as P
 
 
 type alias Server =
-    PhysicalAsset IdTag
-        { chassisId : Chassis.Id
-        , oobId : Oob.Id
-        }
+    HasOob (PhysicalAsset IdTag { chassisId : Chassis.Id })
 
 
 type alias Id =
