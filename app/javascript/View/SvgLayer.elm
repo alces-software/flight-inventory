@@ -197,7 +197,7 @@ externalNetworkAdapterPortLinesAndLabels state axis network connections =
                             network
                             labelPosition
                             ("port " ++ toString connection.networkAdapterPort.number)
-                            "font-size: 12px;"
+                            smallLabelStyles
 
                     labelPosition =
                         { x = line.start.x - 70
@@ -237,13 +237,13 @@ drawInternalNetwork :
     -> List NetworkConnection.Denormalized
     -> List (Svg msg)
 drawInternalNetwork state network connections =
-    List.map (nodeConnectionLine state network) connections
+    List.map (nodeConnectionLineAndLabel state network) connections
         |> Maybe.Extra.values
-        |> List.map (drawNetworkLine network)
+        |> List.concat
 
 
-nodeConnectionLine : State -> Network -> NetworkConnection.Denormalized -> Maybe Line
-nodeConnectionLine state network connection =
+nodeConnectionLineAndLabel : State -> Network -> NetworkConnection.Denormalized -> Maybe (List (Svg msg))
+nodeConnectionLineAndLabel state network connection =
     let
         portPoint =
             Geometry.Networks.adapterPortPosition
@@ -256,9 +256,26 @@ nodeConnectionLine state network connection =
                 connection.node
                 |> Maybe.Extra.join
     in
-    case ( portPoint, nodePoint ) of
-        ( Just portPoint_, Just nodePoint_ ) ->
-            Just <| Line portPoint_ nodePoint_ standardLineWidth
+    case ( portPoint, nodePoint, connection.interface ) of
+        ( Just portPoint_, Just nodePoint_, Just interface ) ->
+            let
+                line =
+                    Line portPoint_ nodePoint_ standardLineWidth
+                        |> drawNetworkLine network
+
+                label =
+                    drawNetworkLabel
+                        network
+                        labelPoint
+                        interface
+                        smallLabelStyles
+
+                labelPoint =
+                    { x = nodePoint_.x - 30
+                    , y = nodePoint_.y - 2
+                    }
+            in
+            Just [ line, label ]
 
         _ ->
             Nothing
@@ -300,3 +317,8 @@ standardLineWidth =
 trunkLineWidth : Int
 trunkLineWidth =
     standardLineWidth * 2
+
+
+smallLabelStyles : String
+smallLabelStyles =
+    "font-size: 12px;"

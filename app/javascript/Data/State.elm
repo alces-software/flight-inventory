@@ -430,6 +430,7 @@ denormalizeNetworkConnection state connection =
                 , networkAdapter = adapter_
                 , networkSwitch = switch_
                 , node = node
+                , interface = connection.interface
                 }
 
         _ ->

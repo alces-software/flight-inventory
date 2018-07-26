@@ -35,6 +35,7 @@ type alias Denormalized =
     , networkAdapter : NetworkAdapter
     , networkSwitch : NetworkSwitch
     , node : Maybe Node
+    , interface : Maybe String
     }
 
 
