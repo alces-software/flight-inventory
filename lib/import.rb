@@ -61,7 +61,7 @@ class Import
     # this does not currently support.
     Log.info 'Importing networks'
 
-    networks_data = metal_view('assets.networks')
+    networks_data = metal_eval('assets.networks')
     Log.info "Found #{networks_data.length} networks"
 
     networks_data.map do |data|
@@ -149,7 +149,7 @@ class Import
 
     Log.info "Importing #{human_asset_type.pluralize}"
 
-    all_data = metal_view("assets.#{asset_type.pluralize}")
+    all_data = metal_eval("assets.#{asset_type.pluralize}")
     Log.info "Found #{all_data.length} #{human_asset_type.pluralize}"
 
     assets = all_data.map do |data|
@@ -202,14 +202,14 @@ class Import
   end
 
   def import_groups
-    all_groups = metal_view('groups.map(&:name)')
+    all_groups = metal_eval('groups.map(&:name)')
 
     Log.info "Found #{all_groups.length} groups: #{all_groups.join(', ')}"
 
     all_groups.map do |group|
       Log.info "Importing group #{group}..."
 
-      group_data = metal_view("groups.#{group}.to_h")
+      group_data = metal_eval("groups.#{group}.to_h")
 
       Group.create!(
         name: group,
@@ -219,7 +219,7 @@ class Import
   end
 
   def import_nodes
-    all_nodes = metal_view('nodes.map(&:name)')
+    all_nodes = metal_eval('nodes.map(&:name)')
     # XXX This gets all nodes on old Metalware; above only works on latest
     # Metalware with https://github.com/alces-software/metalware/pull/430
     # merged.
@@ -235,14 +235,12 @@ class Import
   def import_node(node_name)
     Log.info "Importing node #{node_name}..."
 
-    # XXX Use below with old Metalware, as above.
-    # node_data = JSON.parse(ssh.exec!("metal view node.#{node} 2> /dev/null"))
-    node_data = metal_view("nodes.#{node_name}.to_h")
+    node_data = metal_eval("nodes.#{node_name}.to_h")
 
-    node_asset_data = metal_view("nodes.#{node_name}.asset")
+    node_asset_data = metal_eval("nodes.#{node_name}.asset")
     node_server = asset_name(node_asset_data)
 
-    node_group_name = metal_view("nodes.#{node_name}.group.name")
+    node_group_name = metal_eval("nodes.#{node_name}.group.name")
 
     node = Node.create!(
       name: node_name,
@@ -267,7 +265,7 @@ class Import
       node.server.network_adapters.flat_map(&:network_adapter_ports)
 
     Log.info "Associating network connections for node #{node_name} "
-    rendered_networks = metal_view(
+    rendered_networks = metal_eval(
       "nodes.#{node_name}.config.networks.map { |name,data| [name, data.map {|k,v| [k,v]}.to_h ]}.to_h"
     )
     rendered_networks.each do |network_name, network_data|
@@ -307,8 +305,8 @@ class Import
     end
   end
 
-  def metal_view(view_args)
-    metal_command = "metal view '#{view_args}' 2> /dev/null"
+  def metal_eval(eval_args)
+    metal_command = "metal eval '#{eval_args}' 2> /dev/null"
     Log.info ">>> #{metal_command}"
     output = ssh_connection.exec!(metal_command)
     JSON.parse(output)
