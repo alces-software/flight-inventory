@@ -109,10 +109,11 @@ class Import
       parents_map: network_adapters_to_servers
     ) do |adapters|
       adapters.each do |adapter|
-        adapter.data.fetch('ports').each do |interface, port_data|
-          Log.info "Importing network adapter port #{interface} for adapter #{adapter.name}"
+        adapter.data.fetch('ports').each_with_index do |port_data, index|
+          port_number = index += 1
+          Log.info "Importing network adapter port #{port_number} for adapter #{adapter.name}"
           port = NetworkAdapterPort.create!(
-            interface: interface,
+            number: port_number,
             network_adapter: adapter
           )
 
@@ -256,11 +257,6 @@ class Import
       gender.nodes << node
     end
 
-    # XXX Should we have a uniqueness constraint for `NetworkAdapterPort`
-    # interfaces, scoped to `Server` (through `NetworkAdapter`)? Don't think
-    # having multiple with same interface could ever be valid, and would avoid
-    # possibility of this happening accidentally, which could cause confusion
-    # and issues.
     available_network_adapter_ports =
       node.server.network_adapters.flat_map(&:network_adapter_ports)
 
@@ -269,39 +265,22 @@ class Import
       "nodes.#{node_name}.config.networks.map { |name,data| [name, data.map {|k,v| [k,v]}.to_h ]}.to_h"
     )
     rendered_networks.each do |network_name, network_data|
-      interface = network_data.fetch('interface')
+      # Find port Node is connected to Network via by matching up network
+      # names.
+      port = available_network_adapter_ports.find do |p|
+        p.network_connection&.network&.name == network_name
+      end
 
-      port = available_network_adapter_ports.find {|p| p.interface == interface}
       unless port
         Log.info <<~INFO
-          Could not find Server NetworkAdapterPort for Network
-          #{network_name} / interface #{interface} for Node #{node_name};
-          skipping network.
+          Could not find Server NetworkAdapterPort for Network #{network_name}
+          for Node #{node_name}; skipping network.
         INFO
         next
       end
 
-      connection = port.network_connection
-      unless connection
-        Log.warning <<~WARNING
-          Could not find NetworkConnection for NetworkAdapterPort with
-          interface #{port.interface}, though Node #{node_name} is connected.
-        WARNING
-        next
-      end
-
-      # Sanity check to ensure Node and NetworkAdapterPort define consistent
-      # Network connection.
-      connection_network_name = connection.network.name
-      unless connection_network_name == network_name
-        Log.fatal <<~ERROR
-          Node #{node_name} defines interface #{interface} as connected to
-          #{network_name}, but corresponding NetworkAdapterPort defines it as
-          connected to #{connection_network_name}; don't know how to reconcile.
-        ERROR
-      end
-
-      connection.update!(node: node)
+      interface = network_data.fetch('interface')
+      port.network_connection.update!(node: node, interface: interface)
     end
   end
 

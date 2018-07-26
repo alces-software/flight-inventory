@@ -14,7 +14,11 @@ type alias NetworkConnection =
     { networkId : Network.Id
     , networkAdapterPortId : NetworkAdapterPort.Id
     , networkSwitchId : NetworkSwitch.Id
+
+    -- XXX It should be the case that presence of `nodeId` <=> presence of
+    -- `interface`, so maybe should tweak data model to represent this.
     , nodeId : Maybe Node.Id
+    , interface : Maybe String
     }
 
 
@@ -41,3 +45,4 @@ decoder =
         |> P.required "network_adapter_port_id" Asset.idDecoder
         |> P.required "network_switch_id" Asset.idDecoder
         |> P.required "node_id" (D.nullable Asset.idDecoder)
+        |> P.required "interface" (D.nullable D.string)

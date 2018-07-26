@@ -65,15 +65,15 @@ adapterPortPosition state adapterPort =
         adapter =
             TaggedDict.get adapterPort.networkAdapterId state.networkAdapters
 
-        interfaceOrderedPorts =
+        orderedPorts =
             Maybe.map
-                (State.portsForAdapter state >> List.sortBy .interface)
+                (State.portsForAdapter state >> List.sortBy .number)
                 adapter
 
-        interfaceOrderedConnections =
+        orderedConnections =
             Maybe.map
                 (List.map (State.connectionForPort state) >> Maybe.Extra.values)
-                interfaceOrderedPorts
+                orderedPorts
 
         portConnection =
             State.connectionForPort state adapterPort
@@ -82,7 +82,7 @@ adapterPortPosition state adapterPort =
             Maybe.map .boundingRect adapter
                 |> Maybe.Extra.join
     in
-    case ( portConnection, interfaceOrderedConnections, adapterRect ) of
+    case ( portConnection, orderedConnections, adapterRect ) of
         ( Just connection, Just connections, Just rect ) ->
             BoundingRect.connectionPoint connection connections rect
 

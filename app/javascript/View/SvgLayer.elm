@@ -196,7 +196,7 @@ externalNetworkAdapterPortLinesAndLabels state axis network connections =
                         drawNetworkLabel
                             network
                             labelPosition
-                            connection.networkAdapterPort.interface
+                            ("port " ++ toString connection.networkAdapterPort.number)
                             "font-size: 12px;"
 
                     labelPosition =

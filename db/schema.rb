@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_25_160114) do
+ActiveRecord::Schema.define(version: 2018_07_26_120304) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -43,10 +43,10 @@ ActiveRecord::Schema.define(version: 2018_07_25_160114) do
   end
 
   create_table "network_adapter_ports", force: :cascade do |t|
-    t.string "interface", null: false
     t.bigint "network_adapter_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "number", null: false
     t.index ["network_adapter_id"], name: "index_network_adapter_ports_on_network_adapter_id"
   end
 
@@ -66,6 +66,7 @@ ActiveRecord::Schema.define(version: 2018_07_25_160114) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "node_id"
+    t.string "interface"
     t.index ["network_adapter_port_id"], name: "index_network_connections_on_network_adapter_port_id"
     t.index ["network_id"], name: "index_network_connections_on_network_id"
     t.index ["network_switch_id"], name: "index_network_connections_on_network_switch_id"
