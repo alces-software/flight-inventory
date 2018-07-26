@@ -10,10 +10,12 @@ module Geometry.Networks
 
 import Data.Network as Network exposing (Network)
 import Data.NetworkAdapterPort as NetworkAdapterPort exposing (NetworkAdapterPort)
+import Data.NetworkConnection as NetworkConnection
 import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.Node exposing (Node)
 import Data.Oob exposing (Oob)
 import Data.State as State exposing (State)
+import Dict
 import Geometry.BoundingRect as BoundingRect
 import Geometry.Point exposing (Point)
 import List.Extra
@@ -103,17 +105,42 @@ switchConnectionPosition state network switch =
         |> Maybe.Extra.join
 
 
-nodeConnectionPosition : State -> Network -> Node -> Maybe Point
-nodeConnectionPosition state network node =
+nodeConnectionPosition : State -> NetworkConnection.Denormalized -> Node -> Maybe Point
+nodeConnectionPosition state connection node =
+    -- Order node connections in the same order that the adapter port side of
+    -- each connection is connected, so that the connection lines do not cross
+    -- over, which makes the diagram easier to read.
     let
-        connectedNetworks =
-            State.networksConnectedToNode state node
+        allConnectionPortYCoords =
+            Dict.values state.networkConnections
+                |> List.filter isNodeConnection
+                |> List.map
+                    (.networkAdapterPortId
+                        >> flip TaggedDict.get state.networkAdapterPorts
+                    )
+                |> Maybe.Extra.values
+                |> List.map (adapterPortPosition state >> Maybe.map .y)
+                |> Maybe.Extra.values
+                |> List.sort
 
-        connectionPoint =
-            BoundingRect.connectionPoint network connectedNetworks
+        isNodeConnection =
+            .nodeId
+                >> Maybe.map ((==) node.id)
+                >> Maybe.withDefault False
+
+        connectionYCoord =
+            adapterPortPosition state connection.networkAdapterPort
+                |> Maybe.map .y
     in
-    Maybe.map connectionPoint node.boundingRect
-        |> Maybe.Extra.join
+    case ( connectionYCoord, node.boundingRect ) of
+        ( Just connectionY, Just rect ) ->
+            BoundingRect.connectionPoint
+                connectionY
+                allConnectionPortYCoords
+                rect
+
+        _ ->
+            Nothing
 
 
 oobConnectionPosition : Oob -> Maybe Point

@@ -252,7 +252,7 @@ nodeConnectionLineAndLabel state network connection =
 
         nodePoint =
             Maybe.map
-                (Geometry.Networks.nodeConnectionPosition state network)
+                (Geometry.Networks.nodeConnectionPosition state connection)
                 connection.node
                 |> Maybe.Extra.join
     in

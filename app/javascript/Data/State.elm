@@ -11,7 +11,6 @@ module Data.State
         , denormalizedConnectionsForNetwork
         , groupNodesByName
         , networksByName
-        , networksConnectedToNode
         , networksConnectedToSwitch
         , pdusByName
         , portsForAdapter
@@ -225,17 +224,6 @@ nameOrderedValues dict =
 networksConnectedToSwitch : State -> NetworkSwitch -> List Network
 networksConnectedToSwitch state switch =
     connectedNetworks state (.networkSwitchId >> (==) switch.id)
-
-
-networksConnectedToNode : State -> Node -> List Network
-networksConnectedToNode state node =
-    let
-        isNodeConnection =
-            .nodeId
-                >> Maybe.map ((==) node.id)
-                >> Maybe.withDefault False
-    in
-    connectedNetworks state isNodeConnection
 
 
 connectedNetworks : State -> (NetworkConnection -> Bool) -> List Network
