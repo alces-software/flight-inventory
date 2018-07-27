@@ -9,20 +9,20 @@ import Data.PhysicalAsset as PhysicalAsset exposing (PhysicalAsset)
 import Data.Psu as Psu exposing (Psu)
 import Data.Server as Server exposing (Server)
 import Data.State as State exposing (AppLayout(..), State)
-import Geometry.Networks
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Msg exposing (Msg(..))
 import Tagged.Dict as TaggedDict
 import View.Logical
 import View.Utils
+import View.ViewCache as ViewCache exposing (ViewCache)
 
 
 layout : State -> Html Msg
 layout state =
     let
         viewCache =
-            initializeViewCache state
+            ViewCache.init state
     in
     div [ class "cluster" ]
         (List.concat
@@ -38,21 +38,6 @@ layout state =
                 (State.chassisByName state)
             ]
         )
-
-
-initializeViewCache : State -> ViewCache
-initializeViewCache state =
-    -- We calculate these values needed in many places once up-front and then
-    -- thread this record through as needed, rather than repeating this many
-    -- times at point of use, since doing that is somewhat time consuming and
-    -- noticeably slows things down.
-    { adapterHeight = Geometry.Networks.adapterHeight state
-    }
-
-
-type alias ViewCache =
-    { adapterHeight : Int
-    }
 
 
 switchView : ViewCache -> State -> NetworkSwitch -> Html Msg
