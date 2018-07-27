@@ -6,10 +6,17 @@ import Elm from 'Main';
 const initialize = () => {
   const elmApp = initializeApp();
 
-  // Debounce sending element positions with short wait when viewport changes,
-  // to avoid spamming Elm app with many new position messages in quick
-  // succession when e.g. user scrolls, causing degraded performance.
-  const handleViewportChange = debounce(sendAllPositions(elmApp), 50);
+  let handleViewportChange = sendAllPositions(elmApp);
+  if (process.env.NODE_ENV === 'development') {
+    // In development, debounce sending element positions with short wait when
+    // viewport changes, to avoid spamming Elm app with many new position
+    // messages in quick succession when e.g. user scrolls, causing degraded
+    // performance. In production this seems not quite as bad, and so we still
+    // want things to continually update rather than debounce - opinions may
+    // change on this however, and/or we should investigate improving
+    // performance generally so we don't need to do this at all.
+    handleViewportChange = debounce(handleViewportChange, 50);
+  }
 
   // Slightly arbitrary tiny wait, after which the app should (hopefully) have
   // initially rendered, before we send the initial positions of elements to
