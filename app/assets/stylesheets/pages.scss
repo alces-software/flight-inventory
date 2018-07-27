@@ -198,6 +198,13 @@ html {
   }
 }
 
+// Wrapper around node elements so these display alongside each other when many
+// nodes to be displayed next to each other (e.g. in groups and genders
+// layouts), rather than in a single column.
+.node-wrapper {
+  display: inline-block;
+}
+
 .node {
   @include asset;
   display: flex;

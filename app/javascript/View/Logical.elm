@@ -72,17 +72,19 @@ groupView viewCache state group =
 
 nodeView : ViewCache -> Node -> Html Msg
 nodeView viewCache node =
-    div
-        [ class "node"
-        , title "Node"
-        , style [ ( "height", toString viewCache.nodeHeight ++ "px" ) ]
-        , View.Utils.idAttribute "data-node-id" node
+    div [ class "node-wrapper" ]
+        [ div
+            [ class "node"
+            , title "Node"
+            , style [ ( "height", toString viewCache.nodeHeight ++ "px" ) ]
+            , View.Utils.idAttribute "data-node-id" node
 
-        -- Picked up by Flipping JS library for animations.
-        , attribute "data-flip-key" node.name
-        ]
-        [ View.Utils.assetHitBox <| State.NodeId node.id
-        , text node.name
+            -- Picked up by Flipping JS library for animations.
+            , attribute "data-flip-key" node.name
+            ]
+            [ View.Utils.assetHitBox <| State.NodeId node.id
+            , text node.name
+            ]
         ]
 
 
