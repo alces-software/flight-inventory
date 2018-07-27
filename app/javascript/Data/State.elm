@@ -7,6 +7,7 @@ module Data.State
         , chassisPsusByName
         , chassisServersByName
         , connectionForPort
+        , connectionsForNode
         , decoder
         , denormalizedConnectionsForNetwork
         , groupNodesByName
@@ -423,3 +424,15 @@ denormalizeNetworkConnection state connection =
 
         _ ->
             Nothing
+
+
+connectionsForNode : State -> Node -> List NetworkConnection
+connectionsForNode state node =
+    let
+        isNodeConnection node connection =
+            connection.nodeId
+                |> Maybe.map ((==) node.id)
+                |> Maybe.withDefault False
+    in
+    Dict.values state.networkConnections
+        |> List.filter (isNodeConnection node)

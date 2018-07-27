@@ -16,7 +16,6 @@ import Data.NetworkSwitch as NetworkSwitch exposing (NetworkSwitch)
 import Data.Node exposing (Node)
 import Data.Oob exposing (Oob)
 import Data.State as State exposing (State)
-import Dict
 import Geometry.BoundingRect as BoundingRect
 import Geometry.Point exposing (Point)
 import List.Extra
@@ -39,19 +38,9 @@ adapterHeight state =
 
 nodeHeight : State -> Int
 nodeHeight state =
-    let
-        connectionsForNode node =
-            Dict.values state.networkConnections
-                |> List.filter (isNodeConnection node)
-
-        isNodeConnection node connection =
-            connection.nodeId
-                |> Maybe.map ((==) node.id)
-                |> Maybe.withDefault False
-    in
     connectedRectHeight
         (TaggedDict.values state.nodes)
-        connectionsForNode
+        (State.connectionsForNode state)
 
 
 {-|
@@ -130,8 +119,7 @@ nodeConnectionPosition state connection node =
     -- over, which makes the diagram easier to read.
     let
         allConnectionPortYCoords =
-            Dict.values state.networkConnections
-                |> List.filter isNodeConnection
+            State.connectionsForNode state node
                 |> List.map
                     (.networkAdapterPortId
                         >> flip TaggedDict.get state.networkAdapterPorts
@@ -140,11 +128,6 @@ nodeConnectionPosition state connection node =
                 |> List.map (adapterPortPosition state >> Maybe.map .y)
                 |> Maybe.Extra.values
                 |> List.sort
-
-        isNodeConnection =
-            .nodeId
-                >> Maybe.map ((==) node.id)
-                >> Maybe.withDefault False
 
         connectionYCoord =
             adapterPortPosition state connection.networkAdapterPort
