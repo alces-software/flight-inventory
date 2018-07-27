@@ -18,12 +18,8 @@ import View.Utils
 import View.ViewCache as ViewCache exposing (ViewCache)
 
 
-layout : State -> Html Msg
-layout state =
-    let
-        viewCache =
-            ViewCache.init state
-    in
+layout : ViewCache -> State -> Html Msg
+layout viewCache state =
     div [ class "cluster" ]
         (List.concat
             [ [ assetTitle <| state.clusterName ]
@@ -106,7 +102,7 @@ serverView viewCache state server =
             server
         , div [ class "nodes" ]
             (List.map
-                View.Logical.nodeView
+                (View.Logical.nodeView viewCache)
                 (State.serverNodesByName state server)
             )
         ]

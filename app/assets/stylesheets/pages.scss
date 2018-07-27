@@ -200,12 +200,14 @@ html {
 
 .node {
   @include asset;
-  display: inline-block;
+  display: flex;
   width: 100px;
   margin-left: 50px;
   margin-top: 10px;
   margin-bottom: 10px;
   background-color: coral;
+  align-items: center; // Vertically align node name.
+  justify-content: center; // Horizontally align node name.
 }
 
 // Wrapper for things which can be connected to a Network, i.e. NetworkAdapters

@@ -15,33 +15,34 @@ import Html.Attributes exposing (..)
 import Msg exposing (Msg(..))
 import Tagged.Dict as TaggedDict exposing (TaggedDict)
 import View.Utils
+import View.ViewCache exposing (ViewCache)
 
 
-groupsLayout : State -> Html Msg
-groupsLayout state =
+groupsLayout : ViewCache -> State -> Html Msg
+groupsLayout viewCache state =
     let
         groups =
             TaggedDict.values state.groups
     in
     div []
-        (List.map (groupView state) groups)
+        (List.map (groupView viewCache state) groups)
 
 
-gendersLayout : State -> Html Msg
-gendersLayout state =
+gendersLayout : ViewCache -> State -> Html Msg
+gendersLayout viewCache state =
     let
         nodesByGender =
             TaggedDict.values state.nodes
                 |> Node.nodesByGender
     in
     div []
-        (Dict.map genderNodesView nodesByGender
+        (Dict.map (genderNodesView viewCache) nodesByGender
             |> Dict.values
         )
 
 
-groupView : State -> Group -> Html Msg
-groupView state group =
+groupView : ViewCache -> State -> Group -> Html Msg
+groupView viewCache state group =
     let
         nodes =
             State.groupNodesByName state group
@@ -58,7 +59,7 @@ groupView state group =
                         ]
                         [ text group.name ]
                   ]
-                , List.map nodeView nodes
+                , List.map (nodeView viewCache) nodes
                 ]
     in
     div
@@ -69,11 +70,12 @@ groupView state group =
         groupChildren
 
 
-nodeView : Node -> Html Msg
-nodeView node =
+nodeView : ViewCache -> Node -> Html Msg
+nodeView viewCache node =
     div
         [ class "node"
         , title "Node"
+        , style [ ( "height", toString viewCache.nodeHeight ++ "px" ) ]
         , View.Utils.idAttribute "data-node-id" node
 
         -- Picked up by Flipping JS library for animations.
@@ -84,8 +86,8 @@ nodeView node =
         ]
 
 
-genderNodesView : Node.GenderName -> List Node -> Html Msg
-genderNodesView gender nodes =
+genderNodesView : ViewCache -> Node.GenderName -> List Node -> Html Msg
+genderNodesView viewCache gender nodes =
     -- XXX DRY up with `groupView`.
     let
         genderColour =
@@ -101,5 +103,5 @@ genderNodesView gender nodes =
             , style [ ( "color", genderColour ) ]
             ]
             [ text gender ]
-            :: List.map nodeView nodes
+            :: List.map (nodeView viewCache) nodes
         )

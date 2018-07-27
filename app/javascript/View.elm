@@ -9,6 +9,7 @@ import Msg exposing (Msg(..))
 import View.Logical
 import View.Physical
 import View.SvgLayer as SvgLayer
+import View.ViewCache as ViewCache exposing (ViewCache)
 
 
 viewState : State -> Html Msg
@@ -87,13 +88,16 @@ clusterDiagram state =
         diagram =
             case state.layout of
                 Physical ->
-                    View.Physical.layout state
+                    View.Physical.layout viewCache state
 
                 LogicalInGroups ->
-                    View.Logical.groupsLayout state
+                    View.Logical.groupsLayout viewCache state
 
                 LogicalInGenders ->
-                    View.Logical.gendersLayout state
+                    View.Logical.gendersLayout viewCache state
+
+        viewCache =
+            ViewCache.init state
     in
     div
         [ class "cluster-diagram" ]

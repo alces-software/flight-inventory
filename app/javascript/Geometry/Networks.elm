@@ -4,6 +4,7 @@ module Geometry.Networks
         , adapterPortPosition
         , axisForNetwork
         , nodeConnectionPosition
+        , nodeHeight
         , oobConnectionPosition
         , switchConnectionPosition
         )
@@ -34,6 +35,23 @@ adapterHeight state =
     connectedRectHeight
         (TaggedDict.values state.networkAdapters)
         connectionsForAdapter
+
+
+nodeHeight : State -> Int
+nodeHeight state =
+    let
+        connectionsForNode node =
+            Dict.values state.networkConnections
+                |> List.filter (isNodeConnection node)
+
+        isNodeConnection node connection =
+            connection.nodeId
+                |> Maybe.map ((==) node.id)
+                |> Maybe.withDefault False
+    in
+    connectedRectHeight
+        (TaggedDict.values state.nodes)
+        connectionsForNode
 
 
 {-|

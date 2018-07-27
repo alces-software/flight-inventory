@@ -6,6 +6,7 @@ import Geometry.Networks
 
 type alias ViewCache =
     { adapterHeight : Int
+    , nodeHeight : Int
     }
 
 
@@ -16,4 +17,5 @@ init state =
     -- times at point of use, since doing that is somewhat time consuming and
     -- noticeably slows things down.
     { adapterHeight = Geometry.Networks.adapterHeight state
+    , nodeHeight = Geometry.Networks.nodeHeight state
     }
